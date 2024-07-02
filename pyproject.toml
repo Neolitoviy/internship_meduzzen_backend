@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "internship-meduzzen-backend"
+version = "0.1.0"
+description = ""
+authors = ["Admin <verukacolt@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "0.100.0"
+uvicorn = "0.22.0"
+pydantic-settings = "^2.3.4"
+
+
+[tool.poetry.group.dev.dependencies]
+httpx = "0.24.1"
+pytest = "7.3.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
