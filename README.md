@@ -83,3 +83,73 @@ pytest
 ```
 
 This will discover and run all the test files in project.
+
+### 2. Running Tests in Docker
+
+To run tests in the Docker container:
+
+#### List all running containers:
+
+```bash
+docker ps
+```
+
+This command displays all running containers. Note the ID of your container.
+
+#### Open a terminal in the container:
+
+```bash
+docker exec -it [CONTAINER ID] bash
+```
+
+Replace `[CONTAINER ID]` with the actual ID of your container.
+
+#### Run tests in the container terminal:
+
+```bash
+pytest
+```
+
+## Running the Application with Docker
+
+### 1. Build the Docker Image
+
+```bash
+docker build -t fastapi-app .
+```
+
+### 2. Run the Docker Container
+
+```bash
+docker run -d -p 8000:8000 --name fastapi-app-container --env-file .env fastapi-app
+```
+
+### 3. Verify the Application
+
+### Via Browser:
+
+Navigate to the following URL in your browser:
+
+```http
+http://127.0.0.1:8000/
+```
+
+It should return a JSON response:
+
+```json
+{
+    "status_code": 200,
+    "detail": "ok",
+    "result": "working"
+}
+```
+
+### Via Swagger UI:
+
+Open the Swagger UI documentation at:
+
+```http
+http://127.0.0.1:8000/docs
+```
+
+Here you can see the available endpoint and test the GET / endpoint directly from the browser.
