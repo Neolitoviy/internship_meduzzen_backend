@@ -16,28 +16,18 @@ git clone https://github.com/Neolitoviy/internship_meduzzen_backend.git
 cd internship_meduzzen_backend
 ```
 
-### 2. Create a Virtual Environment
+### 2. Install Poetry
 
 Create and activate a virtual environment:
 
-#### For Windows:
-```bash
-python -m venv venv
-venv\Scripts\activate.bat
-```
-
-#### For MacOS/Linux:
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
+Follow the instructions on [Poetry's official website to install Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer).
 
 ### 3. Install Dependencies
 
-Install the required packages using `pip`:
+Install the required packages using poetry:
 
 ```bash
-pip install -r requirements.txt
+poetry install
 ```
 
 ## Running the Application
