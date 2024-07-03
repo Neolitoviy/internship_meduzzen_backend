@@ -1,13 +1,26 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
-from pathlib import Path
+from functools import lru_cache
 
-path = Path().absolute().parent / ".env"
+from pydantic_settings import BaseSettings
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 
 class Settings(BaseSettings):
-    host: str = "0.0.0.0"
-    port: int = 8000
-    model_config = SettingsConfigDict(env_file=path, extra="allow")
+    host: str = os.getenv('HOST')
+    port: int = int(os.getenv('PORT'))
+    postgres_user: str = os.getenv('POSTGRES_USER')
+    postgres_pass: str = os.getenv('POSTGRES_PASS')
+    postgres_db: str = os.getenv('POSTGRES_DB')
+    postgres_port: int = int(os.getenv('POSTGRES_PORT'))
+    redis_host: str = os.getenv('REDIS_HOST')
+    redis_port: int = int(os.getenv('REDIS_PORT'))
 
 
-settings = Settings()
+@lru_cache()
+def get_settings():
+    return Settings()
+
+
+settings = get_settings()
