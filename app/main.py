@@ -1,9 +1,13 @@
 import uvicorn
+import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.db.postgres_db import check_postgres_connection
 from app.db.redis_db import check_redis_connection
+from app.logging_config import logging_config
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -19,6 +23,7 @@ app.add_middleware(
 
 @app.get("/")
 async def health_check():
+    logger.info("Health check endpoint was called")
     return {
         "status_code": 200,
         "detail": "ok",
@@ -26,13 +31,19 @@ async def health_check():
     }
 
 
-@app.get("/base_status")
-async def base_status():
+@app.get("/health/postgres")
+async def health_check_postgres():
     postgres_status = await check_postgres_connection()
+    return {
+        "postgresql": "connected" if postgres_status is True else f"error: {postgres_status}",
+    }
+
+
+@app.get("/health/redis")
+async def health_check_redis():
     redis_status = await check_redis_connection()
     return {
-        'postgres_status': "connected" if postgres_status is True else f"error: {postgres_status}",
-        'redis_status': "connected" if redis_status == 1 else f"error: {redis_status}"
+        "redis": "connected" if redis_status else f"error: {redis_status}",
     }
 
 
