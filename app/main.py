@@ -26,13 +26,19 @@ async def health_check():
     }
 
 
-@app.get("/base_status")
-async def base_status():
+@app.get("/health/postgres")
+async def health_check_postgres():
     postgres_status = await check_postgres_connection()
+    return {
+        "postgresql": "connected" if postgres_status is True else f"error: {postgres_status}",
+    }
+
+
+@app.get("/health/redis")
+async def health_check_redis():
     redis_status = await check_redis_connection()
     return {
-        'postgres_status': "connected" if postgres_status is True else f"error: {postgres_status}",
-        'redis_status': "connected" if redis_status == 1 else f"error: {redis_status}"
+        "redis": "connected" if redis_status else f"error: {redis_status}",
     }
 
 
