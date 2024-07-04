@@ -3,7 +3,9 @@
 
 ## Dependencies
 
-- Python 3.10
+- Python ^3.10
+- Docker
+- Docker Compose
 
 ## Installation
 
@@ -110,7 +112,7 @@ Replace `[CONTAINER ID]` with the actual ID of your container.
 pytest
 ```
 
-## Running the Application with Docker
+## Running the Application with Docker 
 
 ### 1. Build the Docker Image
 
@@ -153,3 +155,48 @@ http://127.0.0.1:8000/docs
 ```
 
 Here you can see the available endpoint and test the GET / endpoint directly from the browser.
+
+## Running the Application with Docker Compose
+
+### 1. Build and Run
+
+```bash
+docker-compose up --build
+```
+
+This command will start the PostgreSQL, Redis, and FastAPI services. The FastAPI application will be accessible at http://localhost:8000.
+
+### 2. Stop Services
+
+```bash
+docker-compose down
+```
+
+### 3. View Logs:
+
+#### To view the logs for a specific service, use:
+
+```bash
+docker-compose logs <service_name>
+```
+
+### 4. Verify the Application
+
+### base_status Endpoint:
+
+The /base_status endpoint checks the connection status of both PostgreSQL and Redis databases.
+
+```http
+http://127.0.0.1:8000/base_status
+```
+
+It should return a JSON response:
+
+```json
+{
+    "postgres_status": "connected",
+    "redis_status": "connected"
+}
+```
+
+Otherwise it should return an error message.
