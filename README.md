@@ -200,3 +200,54 @@ It should return a JSON response:
 ```
 
 Otherwise it should return an error message.
+
+## Creating and Applying Migrations
+
+### 1. Prerequisites
+
+```bash
+poetry install
+```
+
+### 2. Initialize Alembic:
+
+```bash
+alembic init migrations
+```
+
+This command will create a migrations directory with Alembic configuration files.
+
+### 3. Configure .env
+
+### 4. Creating Migrations
+
+#### 1. Generate a new migration: 
+
+```bash
+alembic revision --autogenerate -m "Initial migration"
+```
+This command will generate a new migration script inside the migrations/versions directory.
+
+### 5. Applying Migrations
+
+#### 1. Apply the migrations: 
+
+```bash
+alembic upgrade head
+```
+
+This command will apply all pending migrations to your database.
+
+Alternatively, you can specify a particular revision to upgrade to:
+
+```bash
+alembic upgrade <revision>
+```
+
+Replace <revision> with the desired revision identifier from one of the generated files in migrations/versions.
+
+## Running Migrations in Docker
+
+```bash
+docker-compose exec web alembic upgrade head
+```
