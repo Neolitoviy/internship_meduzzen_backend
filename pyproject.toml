@@ -15,8 +15,8 @@ asyncio-redis = "^0.16.0"
 sqlalchemy = "^2.0.31"
 pydantic = "^2.8.2"
 alembic = "^1.13.2"
-psycopg2 = "^2.9.9"
 pytest-asyncio = "^0.23.7"
+psycopg2-binary = "^2.9.9"
 
 
 [tool.poetry.group.dev.dependencies]
