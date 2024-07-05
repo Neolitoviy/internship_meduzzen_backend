@@ -1,4 +1,5 @@
 import uvicorn
+import logging
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,6 +8,9 @@ from app.core.config import settings
 from app.db.database import get_session
 from app.db.postgres_db import check_postgres_connection
 from app.db.redis_db import check_redis_connection
+from app.logging_config import logging_config
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -22,6 +26,7 @@ app.add_middleware(
 
 @app.get("/")
 async def health_check():
+    logger.info("Health check endpoint was called")
     return {
         "status_code": 200,
         "detail": "ok",
