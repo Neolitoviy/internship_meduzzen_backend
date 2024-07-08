@@ -22,9 +22,9 @@ class UsersService:
             return UserResponse(**user_dict)
 
     @staticmethod
-    async def get_users(uow: IUnitOfWork) -> list[UserResponse]:
+    async def get_users(uow: IUnitOfWork, skip: int, limit: int) -> list[UserResponse]:
         async with uow:
-            users = await uow.users.find_all()
+            users = await uow.users.find_all(skip=skip, limit=limit)
             return [UserResponse(**user.__dict__) for user in users]
 
     @staticmethod

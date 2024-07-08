@@ -28,9 +28,9 @@ async def add_user(user: UserCreate, uow: UOWDep):
 
 
 @router.get("", response_model=List[UserResponse])
-async def get_users(uow: UOWDep):
+async def get_users(uow: UOWDep, skip: int = 0, limit: int = 10):
     try:
-        users = await UsersService().get_users(uow)
+        users = await UsersService().get_users(uow, skip, limit)
         return users
     except ValueError as e:
         logger.error("Error fetching users: %s", e)
