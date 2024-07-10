@@ -1,30 +1,75 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field, model_validator
 from datetime import datetime
+from typing import Optional, Any, Dict, List
+from app.utils.security import hash_password
 
 
 class UserBase(BaseModel):
     email: EmailStr
-    username: str
-    phone_number: str = None
-    age: int = None
-    city: str = None
+    firstname: str
+    lastname: str
+    city: Optional[str] = None
+    phone: Optional[str] = None
+    avatar: Optional[str] = None
+    is_active: Optional[bool] = True
+    is_superuser: Optional[bool] = False
+
+    model_config = {
+        'from_attributes': True
+    }
 
 
 class UserCreate(UserBase):
-    password: str
+    password1: Optional[str] = Field(None, min_length=6)
+    password2: Optional[str] = Field(None, min_length=6)
+    hashed_password: Optional[str] = None
+
+    @model_validator(mode='before')
+    @classmethod
+    def check_passwords_match(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        if values.get('password1') and values.get('password2') and values['password1'] != values['password2']:
+            raise ValueError('Passwords do not match')
+        return values
+
+    @model_validator(mode='before')
+    @classmethod
+    def hash_password(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        if values.get('password1'):
+            values['hashed_password'] = hash_password(values['password1'])
+        return values
+
+    model_config = {
+        'from_attributes': True
+    }
 
 
 class UserUpdate(UserBase):
-    password: str = None
+    password: Optional[str] = None
+
+    @model_validator(mode='before')
+    @classmethod
+    def hash_password(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        if 'password' in values:
+            values['hashed_password'] = hash_password(values['password'])
+            values.pop('password', None)
+        return values
+
+    @model_validator(mode='before')
+    @classmethod
+    def set_updated_at(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        values['updated_at'] = datetime.utcnow()
+        return values
+
+    model_config = {
+        'from_attributes': True
+    }
 
 
 class UserInDB(UserBase):
     id: int
+    hashed_password: str
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 class UserResponse(UserBase):
@@ -32,23 +77,23 @@ class UserResponse(UserBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = {
+        'from_attributes': True
+    }
 
 
-class SignInRequest(BaseModel):
-    email: EmailStr
-    password: str
+class PaginationLinks(BaseModel):
+    previous: Optional[str]
+    next: Optional[str]
 
 
-class SignUpRequest(UserCreate):
-    pass
+class UserListResponse(BaseModel):
+    current_page: int
+    total_pages: int
+    pagination: PaginationLinks
+    users: List[UserResponse]
 
+    model_config = {
+        'from_attributes': True
+    }
 
-class UserDetail(UserResponse):
-    pass
-
-
-class UsersList(BaseModel):
-    users: list[UserResponse]
-    total: int

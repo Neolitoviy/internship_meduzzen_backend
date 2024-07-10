@@ -1,8 +1,7 @@
 from typing import List
-from fastapi import APIRouter, HTTPException
-from app.routers.dependencies import UOWDep
-from app.schemas.users import UserCreate, UserUpdate, UserResponse
-from app.services.users import UsersService
+from fastapi import APIRouter, HTTPException, Request
+from app.routers.dependencies import UOWDep, UserServiceDep
+from app.schemas.users import UserCreate, UserUpdate, UserResponse, UserListResponse
 import logging
 from app.core.logging_config import logging_config
 
@@ -15,23 +14,24 @@ router = APIRouter(
 
 
 @router.post("", response_model=UserResponse)
-async def add_user(user: UserCreate, uow: UOWDep):
+async def create_user(user: UserCreate, uow: UOWDep, user_service: UserServiceDep):
     try:
-        user = await UsersService().add_user(uow, user)
+        user = await user_service.create_user(uow, user)
         return user
     except ValueError as e:
-        logger.error("Error adding user: %s", e)
-        raise HTTPException(status_code=400, detail=f"Error adding user: {e}")
+        logger.error("Error creating user: %s", e)
+        raise HTTPException(status_code=400, detail=f"Error creating user: {e}")
     except Exception as e:
-        logger.error("Error adding user: %s", e)
-        raise HTTPException(status_code=500, detail=f"Error adding user: {e}")
+        logger.error("Error creating user: %s", e)
+        raise HTTPException(status_code=500, detail=f"Error creating user: {e}")
 
 
-@router.get("", response_model=List[UserResponse])
-async def get_users(uow: UOWDep, skip: int = 0, limit: int = 10):
+@router.get("", response_model=UserListResponse)
+async def get_users(request: Request, uow: UOWDep, user_service: UserServiceDep, skip: int = 0, limit: int = 10):
     try:
-        users = await UsersService().get_users(uow, skip, limit)
-        return users
+        request_url = str(request.url)
+        users_response = await user_service.get_users(uow, skip, limit, request_url)
+        return users_response
     except ValueError as e:
         logger.error("Error fetching users: %s", e)
         raise HTTPException(status_code=400, detail=f"Error fetching users: {e}")
@@ -41,9 +41,9 @@ async def get_users(uow: UOWDep, skip: int = 0, limit: int = 10):
 
 
 @router.get("/{user_id}", response_model=UserResponse)
-async def get_user(user_id: int, uow: UOWDep):
+async def get_user(user_id: int, uow: UOWDep, user_service: UserServiceDep):
     try:
-        user = await UsersService().get_user_by_id(uow, user_id)
+        user = await user_service.get_user_by_id(uow, user_id)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         return user
@@ -56,9 +56,9 @@ async def get_user(user_id: int, uow: UOWDep):
 
 
 @router.put("/{user_id}", response_model=UserResponse)
-async def update_user(user_id: int, user: UserUpdate, uow: UOWDep):
+async def update_user(user_id: int, user: UserUpdate, uow: UOWDep, user_service: UserServiceDep):
     try:
-        user = await UsersService().update_user(uow, user_id, user)
+        user = await user_service.update_user(uow, user_id, user)
         return user
     except ValueError as e:
         logger.error("Error updating user: %s", e)
@@ -69,9 +69,9 @@ async def update_user(user_id: int, user: UserUpdate, uow: UOWDep):
 
 
 @router.delete("/{user_id}", response_model=UserResponse)
-async def delete_user(user_id: int, uow: UOWDep):
+async def delete_user(user_id: int, uow: UOWDep, user_service: UserServiceDep):
     try:
-        user = await UsersService().delete_user(uow, user_id)
+        user = await user_service.delete_user(uow, user_id)
         return user
     except ValueError as e:
         logger.error("Error deleting user: %s", e)

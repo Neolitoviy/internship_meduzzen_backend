@@ -1,11 +1,11 @@
-from sqlalchemy import insert, select, update, delete
+from sqlalchemy import insert, select, update, delete, RowMapping, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from abc import ABC, abstractmethod
 
 
 class AbstractRepository(ABC):
     @abstractmethod
-    async def add_one(self, data: dict) -> int:
+    async def add_one(self, data: dict) -> RowMapping:
         raise NotImplementedError
 
     @abstractmethod
@@ -17,11 +17,15 @@ class AbstractRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def edit_one(self, id: int, data: dict) -> int:
+    async def edit_one(self, id: int, data: dict) -> RowMapping:
         raise NotImplementedError
 
     @abstractmethod
-    async def delete_one(self, id: int) -> int:
+    async def delete_one(self, id: int) -> RowMapping:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def count_all(self) -> int:
         raise NotImplementedError
 
 
@@ -31,15 +35,15 @@ class SQLAlchemyRepository(AbstractRepository):
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    async def add_one(self, data: dict) -> int:
-        stmt = insert(self.model).values(**data).returning(self.model.id)
+    async def add_one(self, data: dict) -> RowMapping:
+        stmt = insert(self.model).values(**data).returning(*self.model.__table__.columns)
         res = await self.session.execute(stmt)
-        return res.scalar_one()
+        return res.fetchone()._mapping
 
-    async def edit_one(self, id: int, data: dict) -> int:
-        stmt = update(self.model).values(**data).filter_by(id=id).returning(self.model.id)
+    async def edit_one(self, id: int, data: dict) -> RowMapping:
+        stmt = update(self.model).values(**data).filter_by(id=id).returning(*self.model.__table__.columns)
         res = await self.session.execute(stmt)
-        return res.scalar_one()
+        return res.fetchone()._mapping
 
     async def find_all(self, skip: int, limit: int):
         stmt = select(self.model)
@@ -51,7 +55,12 @@ class SQLAlchemyRepository(AbstractRepository):
         res = await self.session.execute(stmt)
         return res.scalar_one_or_none()
 
-    async def delete_one(self, id: int) -> int:
-        stmt = delete(self.model).filter_by(id=id).returning(self.model.id)
+    async def delete_one(self, id: int) -> RowMapping:
+        stmt = delete(self.model).filter_by(id=id).returning(*self.model.__table__.columns)
         res = await self.session.execute(stmt)
-        return res.scalar_one()
+        return res.fetchone()._mapping
+
+    async def count_all(self) -> int:
+        stmt = select(func.count()).select_from(self.model)
+        res = await self.session.execute(stmt)
+        return res.scalar()
