@@ -15,7 +15,7 @@ router = APIRouter(
 )
 
 
-@router.get("")
+@router.get("/")
 async def health_check():
     logger.info("Health check endpoint was called")
     return {
