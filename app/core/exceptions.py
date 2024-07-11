@@ -1,34 +1,26 @@
-class UserCreationError(Exception):
-    """Exception raised when an error occurs during user creation."""
-
-    def __init__(self, message="Failed to create user", errors=None):
+class CustomException(Exception):
+    def __init__(self, message: str, status_code: int = 400):
         super().__init__(message)
-        self.errors = errors
+        self.message = message
+        self.status_code = status_code
 
 
-class UserNotFoundError(Exception):
-    """Exception raised when the user cannot be found."""
+class UserNotFound(CustomException):
+    """Exception raised when user is not found."""
 
-    def __init__(self, message="User not found"):
-        super().__init__(message)
-
-
-class UserUpdateError(Exception):
-    """Exception raised when there is an error updating the user."""
-
-    def __init__(self, message="Failed to update user"):
-        super().__init__(message)
+    def __init__(self, message: str = "User not found"):
+        super().__init__(message, status_code=404)
 
 
-class UserDeletionError(Exception):
-    """Exception raised when there is an error deleting the user."""
+class UserAlreadyExists(CustomException):
+    """Exception raised when user already exists."""
 
-    def __init__(self, message="Failed to delete user"):
-        super().__init__(message)
+    def __init__(self, message: str = "User already exists"):
+        super().__init__(message, status_code=409)
 
 
-class UserFetchError(Exception):
-    """Exception raised when there is an error fetching the user list."""
+class EmailAlreadyExists(CustomException):
+    """Exception raised when email already exists."""
 
-    def __init__(self, message="Failed to fetch users"):
-        super().__init__(message)
+    def __init__(self, message: str = "Email already exists"):
+        super().__init__(message, status_code=409)

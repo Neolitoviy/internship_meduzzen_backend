@@ -38,12 +38,18 @@ class SQLAlchemyRepository(AbstractRepository):
     async def add_one(self, data: dict) -> RowMapping:
         stmt = insert(self.model).values(**data).returning(*self.model.__table__.columns)
         res = await self.session.execute(stmt)
-        return res.fetchone()._mapping
+        result = res.fetchone()
+        if result is None:
+            raise ValueError("Failed to add record")
+        return result._mapping
 
     async def edit_one(self, id: int, data: dict) -> RowMapping:
         stmt = update(self.model).values(**data).filter_by(id=id).returning(*self.model.__table__.columns)
         res = await self.session.execute(stmt)
-        return res.fetchone()._mapping
+        result = res.fetchone()
+        if result is None:
+            raise ValueError("Record not found")
+        return result._mapping
 
     async def find_all(self, skip: int, limit: int):
         stmt = select(self.model)
@@ -58,7 +64,10 @@ class SQLAlchemyRepository(AbstractRepository):
     async def delete_one(self, id: int) -> RowMapping:
         stmt = delete(self.model).filter_by(id=id).returning(*self.model.__table__.columns)
         res = await self.session.execute(stmt)
-        return res.fetchone()._mapping
+        result = res.fetchone()
+        if result is None:
+            raise ValueError("Record not found")
+        return result._mapping
 
     async def count_all(self) -> int:
         stmt = select(func.count()).select_from(self.model)

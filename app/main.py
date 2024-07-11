@@ -6,6 +6,18 @@ from app.routers.users import router as users_router
 from app.routers.healthcheck import router as health_router
 from app.core.logging_config import logging_config
 import logging
+from app.core.exception_handlers import (
+    user_not_found_exception_handler,
+    email_already_exists_exception_handler,
+    user_already_exists_exception_handler,
+)
+from app.core.exceptions import UserNotFound, UserAlreadyExists, EmailAlreadyExists
+
+app = FastAPI()
+
+app.add_exception_handler(UserNotFound, user_not_found_exception_handler)
+app.add_exception_handler(EmailAlreadyExists, email_already_exists_exception_handler)
+app.add_exception_handler(UserAlreadyExists, user_already_exists_exception_handler)
 
 logger = logging.getLogger(__name__)
 
