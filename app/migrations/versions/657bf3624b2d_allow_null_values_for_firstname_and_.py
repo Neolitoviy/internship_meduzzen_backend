@@ -1,8 +1,8 @@
-"""initial migration
+"""Allow null values for firstname and lastname
 
-Revision ID: 5ed47447871b
-Revises: e1e60fbb037e
-Create Date: 2024-07-11 15:36:48.696750
+Revision ID: 657bf3624b2d
+Revises: 
+Create Date: 2024-07-12 02:57:46.472499
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '5ed47447871b'
-down_revision: Union[str, None] = 'e1e60fbb037e'
+revision: str = '657bf3624b2d'
+down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -24,12 +24,12 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('email', sa.String(), nullable=False),
     sa.Column('is_active', sa.Boolean(), nullable=True),
-    sa.Column('firstname', sa.String(), nullable=False),
-    sa.Column('lastname', sa.String(), nullable=False),
+    sa.Column('firstname', sa.String(), nullable=True),
+    sa.Column('lastname', sa.String(), nullable=True),
     sa.Column('city', sa.String(), nullable=True),
     sa.Column('phone', sa.String(), nullable=True),
     sa.Column('avatar', sa.String(), nullable=True),
-    sa.Column('hashed_password', sa.String(), nullable=False),
+    sa.Column('hashed_password', sa.String(), nullable=True),
     sa.Column('is_superuser', sa.Boolean(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),

@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
-from app.services.users import UsersService
-from app.schemas.users import UserCreate, UserUpdate, UserInDB
+from app.services.user import UserService
+from app.schemas.user import UserCreate, UserUpdate, UserInDB
 from app.utils.unitofwork import IUnitOfWork
 from datetime import datetime
 

@@ -1,4 +1,16 @@
-from app.schemas.users import UserCreate, UserUpdate, UserResponse, UserInDB, UserListResponse, PaginationLinks
+from typing import Optional
+
+from fastapi import HTTPException
+from fastapi.security import HTTPAuthorizationCredentials
+from starlette import status
+
+from app.core.config import settings
+from app.core.hashing import Hasher
+from app.core.verify_token import VerifyToken
+from app.schemas.auth import UserAuthCreate
+from app.schemas.token import Token
+from app.schemas.user import UserCreate, UserUpdate, UserResponse, UserInDB, UserListResponse, PaginationLinks
+from app.services.jwt import check_jwt_type, decode_jwt_token, create_jwt_token
 from app.utils.unitofwork import IUnitOfWork
 from datetime import datetime
 import logging
@@ -8,7 +20,7 @@ from app.core.exceptions import UserNotFound, EmailAlreadyExists
 logger = logging.getLogger(__name__)
 
 
-class UsersService:
+class UserService:
     @staticmethod
     async def create_user(uow: IUnitOfWork, user: UserCreate) -> UserResponse:
         user_dict = user.model_dump()
@@ -60,8 +72,8 @@ class UsersService:
                 raise UserNotFound(f"User with email {email} not found")
             return UserInDB(**user.__dict__)
 
-    @staticmethod
-    async def update_user(uow: IUnitOfWork, user_id: int, user: UserUpdate) -> UserResponse:
+    async def update_user(self, uow: IUnitOfWork, user_id: int, user: UserUpdate, current_user_id: int) -> UserResponse:
+        await self.check_user_permission(user_id, current_user_id)
         user_dict = user.model_dump(exclude_unset=True)
         async with uow:
             updated_user = await uow.users.edit_one(user_id, user_dict)
@@ -70,8 +82,8 @@ class UsersService:
             await uow.commit()
             return UserResponse(**updated_user)
 
-    @staticmethod
-    async def delete_user(uow: IUnitOfWork, user_id: int) -> UserResponse:
+    async def delete_user(self, uow: IUnitOfWork, user_id: int, current_user_id: int) -> UserResponse:
+        await self.check_user_permission(user_id, current_user_id)
         async with uow:
             user = await uow.users.find_one(id=user_id)
             if not user:
@@ -79,3 +91,40 @@ class UsersService:
             await uow.users.delete_one(user_id)
             await uow.commit()
             return UserResponse(**user.__dict__)
+
+    @staticmethod
+    async def authenticate_user(uow: IUnitOfWork, email: str, password: str) -> Optional[Token]:
+        async with uow:
+            user = await uow.users.find_one(email=email)
+            if user is None or not Hasher.verify_password(password, user.hashed_password):
+                return None
+            access_token = create_jwt_token(data={"sub": str(user.id), "email": user.email, "owner": settings.owner})
+            return Token(access_token=access_token, token_type="Bearer")
+
+    @staticmethod
+    async def create_user_from_token(uow: IUnitOfWork, token: HTTPAuthorizationCredentials) -> UserInDB:
+        current_email = await UserService.get_email_from_token(token)
+        async with uow:
+            user = await uow.users.find_one(email=current_email)
+            if user is None and current_email is None:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Not Found or Bad Request")
+            if not user:
+                user_data = UserAuthCreate(email=current_email, password=str(datetime.utcnow()))
+                user = await UserService.create_user(uow, user=UserCreate(**user_data.dict()))
+            return UserInDB(**user.__dict__)
+
+    @staticmethod
+    async def get_email_from_token(token: HTTPAuthorizationCredentials) -> Optional[str]:
+        check_owner_jwt_type = check_jwt_type(token)
+        if check_owner_jwt_type:
+            payload = decode_jwt_token(token.credentials)
+            email = payload.get('email')
+        else:
+            payload = VerifyToken(token.credentials).verify()
+            email = payload.get('email')
+        return email
+
+    @staticmethod
+    async def check_user_permission(user_id: int, current_user_id: int) -> None:
+        if user_id != current_user_id:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="You don't have permission!")
