@@ -1,92 +1,92 @@
 import pytest
-from unittest.mock import AsyncMock, MagicMock
+from httpx import AsyncClient
+from app.core.exceptions import UserNotFound
 from app.services.user import UserService
-from app.schemas.user import UserCreate, UserUpdate, UserInDB
+from app.schemas.user import UserCreate, UserUpdate
 from app.utils.unitofwork import IUnitOfWork
-from datetime import datetime
 
 
-@pytest.fixture
-def user_data():
-    return {
-        "email": "test@example.com",
-        "firstname": "Test",
-        "lastname": "User",
-        "city": "Test City",
-        "phone": "1234567890",
-        "avatar": "http://example.com/avatar.png",
-        "is_active": True,
-        "is_superuser": False,
-        "password1": "password",
-        "password2": "password",
-    }
+async def test_create_user(ac: AsyncClient, uow: IUnitOfWork):
+    user_service = UserService()
+
+    user_create = UserCreate(
+        email="test@example.com",
+        firstname="John",
+        lastname="Doe",
+        password1="password",
+        password2="password"
+    )
+
+    async with uow:
+        user = await user_service.create_user(uow, user_create)
+
+    assert user.email == user_create.email
+    assert user.firstname == user_create.firstname
+    assert user.lastname == user_create.lastname
+    assert user.is_active is True
+    assert user.is_superuser is False
 
 
-async def test_create_user(user_data):
-    uow = MagicMock(IUnitOfWork)
-    uow.users.add_one = AsyncMock(return_value=1)
-    uow.users.find_one = AsyncMock(return_value=UserInDB(
-        id=1, hashed_password="hashed_password", created_at=datetime.utcnow(), updated_at=datetime.utcnow(), **user_data
-    ))
+async def test_get_user_by_id(ac: AsyncClient, uow: IUnitOfWork):
+    user_service = UserService()
 
-    user = UserCreate(**user_data)
-    result = await UserService.create_user(uow, user)
+    user_create = UserCreate(
+        email="test2@example.com",
+        firstname="Jane",
+        lastname="Doe",
+        password1="password",
+        password2="password"
+    )
 
-    assert result.email == user_data["email"]
-    assert result.firstname == user_data["firstname"]
-    assert uow.users.add_one.called
-    assert uow.commit.called
+    async with uow:
+        created_user = await user_service.create_user(uow, user_create)
+        retrieved_user = await user_service.get_user_by_id(uow, created_user.id)
 
-
-async def test_get_users(user_data):
-    uow = MagicMock(IUnitOfWork)
-    uow.users.find_all = AsyncMock(return_value=[
-        UserInDB(id=1, hashed_password="hashed_password", created_at=datetime.utcnow(), updated_at=datetime.utcnow(),
-                 **user_data)
-    ])
-
-    result = await UserService.get_users(uow, skip=0, limit=10)
-
-    assert len(result) == 1
-    assert result[0].email == user_data["email"]
+    assert retrieved_user is not None
+    assert retrieved_user.email == user_create.email
 
 
-async def test_get_user_by_id(user_data):
-    uow = MagicMock(IUnitOfWork)
-    uow.users.find_one = AsyncMock(return_value=UserInDB(
-        id=1, hashed_password="hashed_password", created_at=datetime.utcnow(), updated_at=datetime.utcnow(), **user_data
-    ))
+async def test_update_user(ac: AsyncClient, uow: IUnitOfWork):
+    user_service = UserService()
 
-    result = await UserService.get_user_by_id(uow, user_id=1)
+    user_create = UserCreate(
+        email="test3@example.com",
+        firstname="Alice",
+        lastname="Smith",
+        password1="password",
+        password2="password"
+    )
 
-    assert result.email == user_data["email"]
-    assert result.id == 1
+    async with uow:
+        created_user = await user_service.create_user(uow, user_create)
 
+        user_update = UserUpdate(
+            firstname="AliceUpdated",
+            lastname="SmithUpdated"
+        )
+        updated_user = await user_service.update_user(uow, created_user.id, user_update, created_user.id)
 
-async def test_update_user(user_data):
-    uow = MagicMock(IUnitOfWork)
-    uow.users.edit_one = AsyncMock(return_value=user_data)
-    uow.users.find_one = AsyncMock(return_value=UserInDB(
-        id=1, hashed_password="hashed_password", created_at=datetime.utcnow(), updated_at=datetime.utcnow(), **user_data
-    ))
-
-    update_data = UserUpdate(firstname="Updated")
-    result = await UserService.update_user(uow, user_id=1, user=update_data)
-
-    assert result.firstname == "Updated"
-    assert uow.users.edit_one.called
-    assert uow.commit.called
+    assert updated_user.firstname == user_update.firstname
+    assert updated_user.lastname == user_update.lastname
 
 
-async def test_delete_user(user_data):
-    uow = MagicMock(IUnitOfWork)
-    uow.users.find_one = AsyncMock(return_value=UserInDB(
-        id=1, hashed_password="hashed_password", created_at=datetime.utcnow(), updated_at=datetime.utcnow(), **user_data
-    ))
-    uow.users.delete_one = AsyncMock(return_value=user_data)
+async def test_delete_user(ac: AsyncClient, uow: IUnitOfWork):
+    user_service = UserService()
 
-    result = await UserService.delete_user(uow, user_id=1)
+    user_create = UserCreate(
+        email="test4@example.com",
+        firstname="Bob",
+        lastname="Brown",
+        password1="password",
+        password2="password"
+    )
 
-    assert result.email == user_data["email"]
-    assert uow.users.delete_one.called
-    assert uow.commit.called
+    async with uow:
+        created_user = await user_service.create_user(uow, user_create)
+        deleted_user = await user_service.delete_user(uow, created_user.id, created_user.id)
+
+    assert deleted_user.email == user_create.email
+
+    async with uow:
+        with pytest.raises(UserNotFound):
+            await user_service.get_user_by_id(uow, created_user.id)

@@ -43,7 +43,9 @@ class UserCreate(UserBase):
     }
 
 
-class UserUpdate(UserBase):
+class UserUpdate(BaseModel):
+    firstname: Optional[str] = None
+    lastname: Optional[str] = None
     password: Optional[str] = None
 
     @model_validator(mode='before')
@@ -96,4 +98,3 @@ class UserListResponse(BaseModel):
     model_config = {
         'from_attributes': True
     }
-
