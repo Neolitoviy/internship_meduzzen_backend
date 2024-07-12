@@ -30,7 +30,7 @@ async def test_create_user(user_data):
     ))
 
     user = UserCreate(**user_data)
-    result = await UsersService.create_user(uow, user)
+    result = await UserService.create_user(uow, user)
 
     assert result.email == user_data["email"]
     assert result.firstname == user_data["firstname"]
@@ -45,7 +45,7 @@ async def test_get_users(user_data):
                  **user_data)
     ])
 
-    result = await UsersService.get_users(uow, skip=0, limit=10)
+    result = await UserService.get_users(uow, skip=0, limit=10)
 
     assert len(result) == 1
     assert result[0].email == user_data["email"]
@@ -57,7 +57,7 @@ async def test_get_user_by_id(user_data):
         id=1, hashed_password="hashed_password", created_at=datetime.utcnow(), updated_at=datetime.utcnow(), **user_data
     ))
 
-    result = await UsersService.get_user_by_id(uow, user_id=1)
+    result = await UserService.get_user_by_id(uow, user_id=1)
 
     assert result.email == user_data["email"]
     assert result.id == 1
@@ -71,7 +71,7 @@ async def test_update_user(user_data):
     ))
 
     update_data = UserUpdate(firstname="Updated")
-    result = await UsersService.update_user(uow, user_id=1, user=update_data)
+    result = await UserService.update_user(uow, user_id=1, user=update_data)
 
     assert result.firstname == "Updated"
     assert uow.users.edit_one.called
@@ -85,7 +85,7 @@ async def test_delete_user(user_data):
     ))
     uow.users.delete_one = AsyncMock(return_value=user_data)
 
-    result = await UsersService.delete_user(uow, user_id=1)
+    result = await UserService.delete_user(uow, user_id=1)
 
     assert result.email == user_data["email"]
     assert uow.users.delete_one.called
