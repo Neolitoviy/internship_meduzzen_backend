@@ -7,6 +7,9 @@ WORKDIR /app
 # Copy the requirements file into the container
 COPY pyproject.toml poetry.lock /app/
 
+# If using psycopg2 on Linux or Docker ...
+#RUN apt-get update \ && apt-get install -y build-essential libpq-dev gcc \ && rm -rf /var/lib/apt/lists/*
+
 # Install Poetry
 RUN pip install poetry
 

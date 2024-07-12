@@ -1,18 +1,18 @@
 import uvicorn
-import logging
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.core.config import settings
-from app.db.database import get_session
-from app.db.postgres_db import check_postgres_connection
-from app.db.redis_db import check_redis_connection
-from app.logging_config import logging_config
+from app.core.exception_handlers import register_exception_handlers
+from app.routers.users import router as users_router
+from app.routers.healthcheck import router as health_router
+from app.core.logging_config import logging_config
+import logging
 
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
+
+register_exception_handlers(app)
 
 # CORS Middleware
 app.add_middleware(
@@ -23,32 +23,9 @@ app.add_middleware(
     allow_headers=["*"],  # All
 )
 
-
-@app.get("/")
-async def health_check():
-    logger.info("Health check endpoint was called")
-    return {
-        "status_code": 200,
-        "detail": "ok",
-        "result": "working"
-    }
-
-
-@app.get("/health/postgres")
-async def health_check_postgres(session: AsyncSession = Depends(get_session)):
-    postgres_status = await check_postgres_connection(session)
-    return {
-        "postgresql": "connected" if postgres_status is True else f"error: {postgres_status}",
-    }
-
-
-@app.get("/health/redis")
-async def health_check_redis():
-    redis_status = await check_redis_connection()
-    return {
-        "redis": "connected" if redis_status else f"error: {redis_status}",
-    }
-
+# Routes
+app.include_router(users_router)
+app.include_router(health_router)
 
 if __name__ == "__main__":
     uvicorn.run(app, host=settings.host, port=settings.port)
