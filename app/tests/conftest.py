@@ -9,7 +9,9 @@ from sqlalchemy.orm import sessionmaker
 from app.core.config import settings
 from app.main import app
 from app.models.base import Base
-from app.utils.unitofwork import UnitOfWork
+from app.schemas.user import UserCreate
+from app.services.user import UserService
+from app.utils.unitofwork import UnitOfWork, IUnitOfWork
 
 SQLALCHEMY_DATABASE_URL = "sqlite+aiosqlite:///./test.db"
 engine = create_async_engine(settings.sqlalchemy_database_url, future=True, echo=True)
@@ -48,3 +50,17 @@ async def uow(db) -> AsyncGenerator[UnitOfWork, None]:
 async def ac() -> AsyncGenerator[AsyncClient, None]:
     async with AsyncClient(app=app, base_url="http://test") as ac:
         yield ac
+
+
+@pytest.fixture(scope="function")
+async def current_user_id(uow: IUnitOfWork) -> int:
+    user_service = UserService()
+    user_create = UserCreate(
+        email="testuser@example.com",
+        firstname="Test",
+        lastname="User",
+        password1="password",
+        password2="password"
+    )
+    user = await user_service.create_user(uow, user_create)
+    return user.id
