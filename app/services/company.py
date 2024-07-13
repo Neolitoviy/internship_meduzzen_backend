@@ -68,7 +68,8 @@ class CompanyService:
             await uow.commit()
             return CompanyResponse(**company.__dict__)
 
-    async def check_company_owner(self, uow: IUnitOfWork, company_id: int, current_user_id: int) -> None:
+    @staticmethod
+    async def check_company_owner(uow: IUnitOfWork, company_id: int, current_user_id: int) -> None:
         async with uow:
             company = await uow.companies.find_one(id=company_id)
             if not company or company.owner_id != current_user_id:
