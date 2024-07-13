@@ -9,6 +9,7 @@ from sqlalchemy.orm import sessionmaker
 from app.core.config import settings
 from app.main import app
 from app.models.base import Base
+from app.models.user import User
 from app.schemas.user import UserCreate
 from app.services.user import UserService
 from app.utils.unitofwork import UnitOfWork, IUnitOfWork
@@ -64,3 +65,21 @@ async def current_user_id(uow: IUnitOfWork) -> int:
     )
     user = await user_service.create_user(uow, user_create)
     return user.id
+
+
+@pytest.fixture(scope="function")
+async def current_user(uow: IUnitOfWork, user_service: UserService) -> User:
+    user_create = UserCreate(
+        email="test@example.com",
+        firstname="Test",
+        lastname="User",
+        password1="password",
+        password2="password"
+    )
+    user = await user_service.create_user(uow, user_create)
+    return user
+
+
+@pytest.fixture(scope="function")
+async def user_service(uow: IUnitOfWork) -> UserService:
+    return UserService()

@@ -2,7 +2,8 @@ from fastapi import Request, FastAPI
 from fastapi.responses import JSONResponse
 from starlette import status
 from app.core.exceptions import UserNotFound, UserAlreadyExists, EmailAlreadyExists, CompanyNotFound, \
-    CompanyPermissionError
+    CompanyPermissionError, InvitationNotFound, MemberNotFound, RequestNotFound, InvalidCredentials, PermissionDenied, \
+    BadRequest
 
 
 def register_exception_handlers(app: FastAPI):
@@ -34,4 +35,40 @@ def register_exception_handlers(app: FastAPI):
     async def company_permission_error_exception_handler(request: Request, exc: CompanyPermissionError):
         return JSONResponse(
             status_code=status.HTTP_403_FORBIDDEN, content={"detail": str(exc)}
+        )
+
+    @app.exception_handler(InvitationNotFound)
+    async def invitation_not_found_exception_handler(request: Request, exc: InvitationNotFound):
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND, content={"detail": str(exc)}
+        )
+
+    @app.exception_handler(MemberNotFound)
+    async def member_not_found_exception_handler(request: Request, exc: MemberNotFound):
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND, content={"detail": str(exc)}
+        )
+
+    @app.exception_handler(RequestNotFound)
+    async def request_not_found_exception_handler(request: Request, exc: RequestNotFound):
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND, content={"detail": str(exc)}
+        )
+
+    @app.exception_handler(InvalidCredentials)
+    async def invalid_credentials_exception_handler(request: Request, exc: InvalidCredentials):
+        return JSONResponse(
+            status_code=status.HTTP_401_UNAUTHORIZED, content={"detail": exc.message},
+        )
+
+    @app.exception_handler(PermissionDenied)
+    async def permission_denied_exception_handler(request: Request, exc: PermissionDenied):
+        return JSONResponse(
+            status_code=status.HTTP_403_FORBIDDEN, content={"detail": exc.message},
+        )
+
+    @app.exception_handler(BadRequest)
+    async def bad_request_exception_handler(request: Request, exc: BadRequest):
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST, content={"detail": exc.message},
         )
