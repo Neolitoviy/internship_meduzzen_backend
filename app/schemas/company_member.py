@@ -7,6 +7,7 @@ from datetime import datetime
 class CompanyMemberBase(BaseModel):
     company_id: int
     user_id: int
+    is_admin: bool
 
 
 class CompanyMemberCreate(CompanyMemberBase):

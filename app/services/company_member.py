@@ -1,3 +1,4 @@
+from typing import Optional
 from app.schemas.company_member import CompanyMemberListResponse, CompanyMemberResponse, PaginationLinks
 from app.utils.unitofwork import IUnitOfWork
 from app.core.exceptions import CompanyPermissionError, MemberNotFound
@@ -26,14 +27,21 @@ class CompanyMemberService:
             await uow.commit()
 
     @staticmethod
-    async def get_memberships(uow: IUnitOfWork, user_id: int, company_id: int, skip: int, limit: int, request_url: str) -> CompanyMemberListResponse:
+    async def get_memberships(
+            uow: IUnitOfWork, user_id: int, company_id: int, skip: int, limit: int,
+            request_url: str, is_admin: Optional[bool] = None) -> CompanyMemberListResponse:
         async with uow:
             company = await uow.companies.find_one(id=company_id)
             if not company or company.owner_id != user_id:
                 raise CompanyPermissionError("You don't have permission to view this company's members.")
 
-            total_members = await uow.company_members.count_all(company_id=company_id)
-            members = await uow.company_members.find_all(company_id=company_id, skip=skip, limit=limit)
+            if is_admin:
+                total_members = await uow.company_members.count_admins(company_id=company_id)
+                members = await uow.company_members.find_admins(company_id=company_id, skip=skip, limit=limit)
+            else:
+                total_members = await uow.company_members.count_all(company_id=company_id)
+                members = await uow.company_members.find_all(company_id=company_id, skip=skip, limit=limit)
+
             total_pages = (total_members + limit - 1) // limit
             current_page = (skip // limit) + 1
 
@@ -50,3 +58,31 @@ class CompanyMemberService:
                     next=next_page_url
                 )
             )
+
+    @staticmethod
+    async def appoint_admin(uow: IUnitOfWork, company_id: int, user_id: int, current_user_id: int) -> None:
+        async with uow:
+            company = await uow.companies.find_one(id=company_id)
+            if not company or company.owner_id != current_user_id:
+                raise CompanyPermissionError("You don't have permission to appoint an admin for this company.")
+
+            member = await uow.company_members.find_one(company_id=company_id, user_id=user_id)
+            if not member:
+                raise MemberNotFound(f"User with id {user_id} is not a member of the company.")
+
+            member.is_admin = True
+            await uow.commit()
+
+    @staticmethod
+    async def remove_admin(uow: IUnitOfWork, company_id: int, user_id: int, current_user_id: int) -> None:
+        async with uow:
+            company = await uow.companies.find_one(id=company_id)
+            if not company or company.owner_id != current_user_id:
+                raise CompanyPermissionError("You don't have permission to remove an admin from this company.")
+
+            member = await uow.company_members.find_one(company_id=company_id, user_id=user_id)
+            if not member:
+                raise MemberNotFound(f"User with id {user_id} is not a member of the company.")
+
+            member.is_admin = False
+            await uow.commit()
