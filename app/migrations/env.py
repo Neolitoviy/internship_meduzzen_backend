@@ -12,6 +12,9 @@ from app.models.company import Company
 from app.models.company_invitation import CompanyInvitation
 from app.models.company_member import CompanyMember
 from app.models.company_request import CompanyRequest
+from app.models.quiz import Quiz
+from app.models.question import Question
+from app.models.answer import Answer
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

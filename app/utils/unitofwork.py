@@ -1,10 +1,13 @@
 from abc import abstractmethod, ABC
 from typing import Type
 from app.db.database import async_session
+from app.repositories.answer import AnswerRepository
 from app.repositories.company import CompanyRepository
 from app.repositories.company_invitation import CompanyInvitationRepository
 from app.repositories.company_member import CompanyMemberRepository
 from app.repositories.company_request import CompanyRequestRepository
+from app.repositories.question import QuestionRepository
+from app.repositories.quiz import QuizRepository
 from app.repositories.user import UserRepository
 
 
@@ -14,6 +17,9 @@ class IUnitOfWork(ABC):
     company_invitations: Type[CompanyInvitationRepository]
     company_members: Type[CompanyMemberRepository]
     company_requests: Type[CompanyRequestRepository]
+    quizzes: Type[QuizRepository]
+    questions: Type[QuestionRepository]
+    answers: Type[AnswerRepository]
 
     @abstractmethod
     def __init__(self):
@@ -47,6 +53,9 @@ class UnitOfWork(IUnitOfWork):
         self.company_invitations = CompanyInvitationRepository(self.session)
         self.company_members = CompanyMemberRepository(self.session)
         self.company_requests = CompanyRequestRepository(self.session)
+        self.quizzes = QuizRepository(self.session)
+        self.questions = QuestionRepository(self.session)
+        self.answers = AnswerRepository(self.session)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):

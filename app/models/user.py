@@ -25,3 +25,4 @@ class User(Base):
     company_invitations_received = relationship("CompanyInvitation", foreign_keys="[CompanyInvitation.invited_user_id]", back_populates="invited_user")
     company_memberships = relationship("CompanyMember", back_populates="user")
     company_requests = relationship("CompanyRequest", back_populates="requested_user")
+    quizzes = relationship("Quiz", back_populates="user")

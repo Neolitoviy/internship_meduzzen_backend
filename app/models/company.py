@@ -19,3 +19,4 @@ class Company(Base):
     invitations = relationship("CompanyInvitation", back_populates="company")
     members = relationship("CompanyMember", back_populates="company")
     requests = relationship("CompanyRequest", back_populates="company")
+    quizzes = relationship("Quiz", back_populates="company")

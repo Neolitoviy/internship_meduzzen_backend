@@ -10,6 +10,9 @@ from app.routers.company import router as company_router
 from app.routers.company_invitation import router as company_invitation_router
 from app.routers.company_member import router as company_member_router
 from app.routers.company_request import router as company_request_router
+from app.routers.quiz import router as quiz_router
+from app.routers.question import router as question_router
+from app.routers.answer import router as answer_router
 from app.core.logging_config import logging_config
 import logging
 
@@ -36,7 +39,9 @@ app.include_router(company_router)
 app.include_router(company_invitation_router)
 app.include_router(company_member_router)
 app.include_router(company_request_router)
+app.include_router(quiz_router)
+app.include_router(question_router)
+app.include_router(answer_router)
 
 if __name__ == "__main__":
     uvicorn.run(app, host=settings.host, port=settings.port)
-
