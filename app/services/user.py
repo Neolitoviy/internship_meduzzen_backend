@@ -1,8 +1,6 @@
 from typing import Optional
 
-from fastapi import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
-from starlette import status
 
 from app.core.config import settings
 from app.core.hashing import Hasher

@@ -6,7 +6,8 @@ from app.core.exceptions import CompanyPermissionError, RequestNotFound
 
 class CompanyRequestService:
     @staticmethod
-    async def request_to_join_company(uow: IUnitOfWork, request: CompanyRequestCreate, current_user_id: int) -> CompanyRequestResponse:
+    async def request_to_join_company(uow: IUnitOfWork, request: CompanyRequestCreate,
+                                      current_user_id: int) -> CompanyRequestResponse:
         request_dict = request.dict()
         request_dict['requested_user_id'] = current_user_id
         async with uow:
@@ -49,10 +50,11 @@ class CompanyRequestService:
             await uow.commit()
 
     @staticmethod
-    async def get_requests_by_user_id(uow: IUnitOfWork, user_id: int, skip: int, limit: int, request_url: str) -> CompanyRequestListResponse:
+    async def get_requests_by_user_id(uow: IUnitOfWork, user_id: int, skip: int, limit: int,
+                                      request_url: str) -> CompanyRequestListResponse:
         async with uow:
-            total_requests = await uow.company_requests.count_all(user_id=user_id)
-            requests = await uow.company_requests.find_all(user_id=user_id, skip=skip, limit=limit)
+            total_requests = await uow.company_requests.count_all(requested_user_id=user_id)
+            requests = await uow.company_requests.find_all(skip=skip, limit=limit, requested_user_id=user_id)
             total_pages = (total_requests + limit - 1) // limit
             current_page = (skip // limit) + 1
 

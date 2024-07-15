@@ -36,11 +36,12 @@ class CompanyMemberService:
                 raise CompanyPermissionError("You don't have permission to view this company's members.")
 
             if is_admin:
-                total_members = await uow.company_members.count_admins(company_id=company_id)
-                members = await uow.company_members.find_admins(company_id=company_id, skip=skip, limit=limit)
+                total_members = await uow.company_members.count_all(company_id=company_id, is_admin=is_admin)
+                members = await uow.company_members.find_all(skip=skip, limit=limit, company_id=company_id,
+                                                             is_admin=is_admin)
             else:
                 total_members = await uow.company_members.count_all(company_id=company_id)
-                members = await uow.company_members.find_all(company_id=company_id, skip=skip, limit=limit)
+                members = await uow.company_members.find_all(skip=skip, limit=limit, company_id=company_id)
 
             total_pages = (total_members + limit - 1) // limit
             current_page = (skip // limit) + 1

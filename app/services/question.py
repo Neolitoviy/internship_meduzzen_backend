@@ -64,8 +64,8 @@ class QuestionService:
             await uow.commit()
 
     @staticmethod
-    async def get_questions_by_quiz_id(uow: IUnitOfWork, quiz_id: int, current_user_id: int) -> List[
-        QuestionSchemaResponse]:
+    async def get_questions_by_quiz_id(uow: IUnitOfWork, quiz_id: int, current_user_id: int, skip: int, limit: int) -> \
+            List[QuestionSchemaResponse]:
         async with uow:
             quiz = await uow.quizzes.find_one(id=quiz_id)
             if not quiz:
@@ -75,5 +75,5 @@ class QuestionService:
                     company_id=quiz.company_id, user_id=current_user_id):
                 raise PermissionDenied("You do not have permission to view questions in this quiz")
 
-            questions = await uow.questions.find_all(quiz_id=quiz_id)
+            questions = await uow.questions.find_all(quiz_id=quiz_id, skip=skip, limit=limit)
             return [QuestionSchemaResponse.model_validate(question) for question in questions]

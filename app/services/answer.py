@@ -74,5 +74,5 @@ class AnswerService:
                     company_id=quiz.company_id, user_id=current_user_id):
                 raise PermissionDenied("You do not have permission to view answers for this question")
 
-            answers = await uow.answers.find_all(question_id=question_id, skip=skip, limit=limit)
+            answers = await uow.answers.find_all(skip=skip, limit=limit, question_id=question_id)
             return [AnswerSchemaResponse.model_validate(answer) for answer in answers]

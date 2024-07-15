@@ -1,8 +1,6 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 from typing import List
-
 from app.schemas.question import QuestionSchemaCreate, QuestionSchemaResponse, UpdateQuestionRequest
-from app.services.question import QuestionService
 from app.routers.dependencies import UOWDep, CurrentUserDep, QuestionServiceDep
 
 router = APIRouter(
@@ -48,6 +46,8 @@ async def get_questions_by_quiz_id(
         quiz_id: int,
         uow: UOWDep,
         current_user: CurrentUserDep,
-        service: QuestionServiceDep
+        service: QuestionServiceDep,
+        skip: int = 0,
+        limit: int = 10
 ):
-    return await service.get_questions_by_quiz_id(uow, quiz_id, current_user.id)
+    return await service.get_questions_by_quiz_id(uow, quiz_id, current_user.id, skip, limit)

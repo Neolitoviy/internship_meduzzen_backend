@@ -48,7 +48,7 @@ class QuizService:
                 raise CompanyPermissionError("You don't have permission to view this company's quizzes.")
 
             total_quizzes = await uow.quizzes.count_all(company_id=company_id)
-            quizzes = await uow.quizzes.find_all(company_id=company_id, skip=skip, limit=limit)
+            quizzes = await uow.quizzes.find_all(skip=skip, limit=limit, company_id=company_id)
             total_pages = (total_quizzes + limit - 1) // limit
             current_page = (skip // limit) + 1
 
