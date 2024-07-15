@@ -1,7 +1,5 @@
 from typing import Optional
-
 from fastapi.security import HTTPAuthorizationCredentials
-
 from app.core.config import settings
 from app.core.hashing import Hasher
 from app.core.verify_token import VerifyToken
