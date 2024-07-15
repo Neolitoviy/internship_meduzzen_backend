@@ -1,9 +1,5 @@
 from typing import Optional
-
-from fastapi import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
-from starlette import status
-
 from app.core.config import settings
 from app.core.hashing import Hasher
 from app.core.verify_token import VerifyToken
@@ -12,7 +8,7 @@ from app.schemas.token import Token
 from app.schemas.user import UserCreate, UserUpdate, UserResponse, UserInDB, UserListResponse, PaginationLinks
 from app.services.jwt import check_jwt_type, decode_jwt_token, create_jwt_token
 from app.utils.unitofwork import IUnitOfWork
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 from app.core.logging_config import logging_config
 from app.core.exceptions import UserNotFound, EmailAlreadyExists, InvalidCredentials, BadRequest, PermissionDenied
@@ -98,8 +94,11 @@ class UserService:
             user = await uow.users.find_one(email=email)
             if user is None or not Hasher.verify_password(password, user.hashed_password):
                 raise InvalidCredentials("Invalid email or password")
-            access_token = create_jwt_token(data={"sub": str(user.id), "email": user.email, "owner": settings.owner})
-            return Token(access_token=access_token, token_type="Bearer")
+            access_token_expires = timedelta(minutes=settings.jwt_access_token_expire_minutes)
+            access_token = create_jwt_token(data={"sub": str(user.id), "email": user.email, "owner": settings.owner},
+                                            expires_delta=access_token_expires)
+            return Token(access_token=access_token, token_type="Bearer",
+                         expiration=datetime.utcnow() + access_token_expires)
 
     @staticmethod
     async def create_user_from_token(uow: IUnitOfWork, token: HTTPAuthorizationCredentials) -> UserInDB:
@@ -110,8 +109,8 @@ class UserService:
                 raise BadRequest("Invalid token")
             if not user:
                 user_data = UserAuthCreate(email=current_email, password=str(datetime.utcnow()))
-                user = await UserService.create_user(uow, user=UserCreate(**user_data.dict()))
-            return UserInDB(**user.__dict__)
+                user = await UserService.create_user(uow, user=UserCreate.model_validate(user_data))
+            return UserInDB.model_validate(user)
 
     @staticmethod
     async def get_email_from_token(token: HTTPAuthorizationCredentials) -> Optional[str]:
