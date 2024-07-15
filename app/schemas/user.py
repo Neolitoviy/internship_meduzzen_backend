@@ -1,13 +1,13 @@
 from pydantic import BaseModel, EmailStr, Field, model_validator
 from datetime import datetime
 from typing import Optional, Any, Dict, List
-from app.utils.security import hash_password
+from app.core.hashing import Hasher
 
 
 class UserBase(BaseModel):
     email: EmailStr
-    firstname: str
-    lastname: str
+    firstname: Optional[str] = None
+    lastname: Optional[str] = None
     city: Optional[str] = None
     phone: Optional[str] = None
     avatar: Optional[str] = None
@@ -35,7 +35,7 @@ class UserCreate(UserBase):
     @classmethod
     def hash_password(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         if values.get('password1'):
-            values['hashed_password'] = hash_password(values['password1'])
+            values['hashed_password'] = Hasher.get_password_hash(values['password1'])
         return values
 
     model_config = {
@@ -50,7 +50,7 @@ class UserUpdate(UserBase):
     @classmethod
     def hash_password(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         if 'password' in values:
-            values['hashed_password'] = hash_password(values['password'])
+            values['hashed_password'] = Hasher.get_password_hash(values['password'])
             values.pop('password', None)
         return values
 
@@ -67,7 +67,7 @@ class UserUpdate(UserBase):
 
 class UserInDB(UserBase):
     id: int
-    hashed_password: str
+    hashed_password: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 

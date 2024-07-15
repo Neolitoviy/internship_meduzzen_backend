@@ -251,3 +251,4 @@ Replace <revision> with the desired revision identifier from one of the generate
 ```bash
 docker-compose exec web alembic upgrade head
 ```
+

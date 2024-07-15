@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request
-from app.routers.dependencies import UOWDep, UserServiceDep
-from app.schemas.users import UserCreate, UserUpdate, UserResponse, UserListResponse
+from app.routers.dependencies import UOWDep, UserServiceDep, CurrentUserDep
+from app.schemas.user import UserCreate, UserUpdate, UserResponse, UserListResponse
 import logging
 from app.core.logging_config import logging_config
 
@@ -28,10 +28,10 @@ async def get_user(user_id: int, uow: UOWDep, user_service: UserServiceDep):
 
 
 @router.put("/{user_id}", response_model=UserResponse)
-async def update_user(user_id: int, user: UserUpdate, uow: UOWDep, user_service: UserServiceDep):
-    return await user_service.update_user(uow, user_id, user)
+async def update_user(user_id: int, user: UserUpdate, uow: UOWDep, user_service: UserServiceDep, current_user: CurrentUserDep):
+    return await user_service.update_user(uow, user_id, user, current_user.id)
 
 
 @router.delete("/{user_id}", response_model=UserResponse)
-async def delete_user(user_id: int, uow: UOWDep, user_service: UserServiceDep):
-    return await user_service.delete_user(uow, user_id)
+async def delete_user(user_id: int, uow: UOWDep, user_service: UserServiceDep, current_user: CurrentUserDep):
+    return await user_service.delete_user(uow, user_id, current_user.id)
