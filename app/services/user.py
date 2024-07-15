@@ -111,8 +111,8 @@ class UserService:
                 raise BadRequest("Invalid token")
             if not user:
                 user_data = UserAuthCreate(email=current_email, password=str(datetime.utcnow()))
-                user = await UserService.create_user(uow, user=UserCreate(**user_data.dict()))
-            return UserInDB(**user.__dict__)
+                user = await UserService.create_user(uow, user=UserCreate.model_validate(user_data))
+            return UserInDB.model_validate(user)
 
     @staticmethod
     async def get_email_from_token(token: HTTPAuthorizationCredentials) -> Optional[str]:
