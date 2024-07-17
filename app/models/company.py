@@ -20,3 +20,4 @@ class Company(Base):
     members = relationship("CompanyMember", back_populates="company")
     requests = relationship("CompanyRequest", back_populates="company")
     quizzes = relationship("Quiz", back_populates="company")
+    quiz_results = relationship("QuizResult", back_populates="company")

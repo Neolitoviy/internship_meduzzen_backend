@@ -15,6 +15,7 @@ from app.models.company_request import CompanyRequest
 from app.models.quiz import Quiz
 from app.models.question import Question
 from app.models.answer import Answer
+from app.models.quiz_result import QuizResult
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

@@ -9,6 +9,7 @@ from app.services.company_member import CompanyMemberService
 from app.services.company_request import CompanyRequestService
 from app.services.question import QuestionService
 from app.services.quiz import QuizService
+from app.services.quiz_result import QuizResultService
 from app.utils.unitofwork import UnitOfWork, IUnitOfWork
 from app.services.user import UserService
 
@@ -49,6 +50,10 @@ def get_answer_service() -> AnswerService:
     return AnswerService()
 
 
+def get_quiz_result_service() -> QuizResultService:
+    return QuizResultService()
+
+
 UOWDep = Annotated[IUnitOfWork, Depends(get_uow)]
 UserServiceDep = Annotated[UserService, Depends(get_users_service)]
 CurrentUserDep = Annotated[UserService, Depends(authenticate_and_get_user)]
@@ -59,3 +64,4 @@ CompanyRequestServiceDep = Annotated[CompanyRequestService, Depends(get_company_
 QuizServiceDep = Annotated[QuizService, Depends(get_quiz_service)]
 QuestionServiceDep = Annotated[QuestionService, Depends(get_question_service)]
 AnswerServiceDep = Annotated[AnswerService, Depends(get_answer_service)]
+QuizResultServiceDep = Annotated[QuizResultService, Depends(get_quiz_result_service)]
