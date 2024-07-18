@@ -1,5 +1,4 @@
 from datetime import datetime
-
 from app.schemas.company_invitation import CompanyInvitationCreate, CompanyInvitationResponse, \
     CompanyInvitationListResponse, PaginationLinks
 from app.utils.unitofwork import IUnitOfWork
@@ -8,14 +7,14 @@ from app.core.exceptions import CompanyPermissionError, InvitationNotFound
 
 class CompanyInvitationService:
     @staticmethod
-    async def send_invitation(uow: IUnitOfWork, invitation: CompanyInvitationCreate, current_user_id: int) -> CompanyInvitationResponse:
+    async def send_invitation(uow: IUnitOfWork, invitation: CompanyInvitationCreate,
+                              current_user_id: int) -> CompanyInvitationResponse:
         async with uow:
             company = await uow.companies.find_one(id=invitation.company_id)
             if not company or company.owner_id != current_user_id:
                 raise CompanyPermissionError(f"You don't have permission to invite users to this company")
 
             new_invitation = await uow.company_invitations.add_one(invitation.dict())
-            await uow.commit()
             return CompanyInvitationResponse(**new_invitation)
 
     @staticmethod
@@ -28,9 +27,7 @@ class CompanyInvitationService:
             company = await uow.companies.find_one(id=invitation.company_id)
             if not company or company.owner_id != current_user_id:
                 raise CompanyPermissionError(f"You don't have permission to cancel this invitation")
-
             await uow.company_invitations.delete_one(invitation_id)
-            await uow.commit()
 
     @staticmethod
     async def accept_invitation(uow: IUnitOfWork, invitation_id: int, current_user_id: int) -> None:
@@ -39,14 +36,16 @@ class CompanyInvitationService:
             if not invitation or invitation.invited_user_id != current_user_id:
                 raise CompanyPermissionError(f"You don't have permission to accept this invitation")
 
+            if await uow.company_members.find_one(company_id=invitation.company_id, user_id=current_user_id):
+                raise CompanyPermissionError(f"You are already a member of this company")
+
             membership_data = {
                 "company_id": invitation.company_id,
                 "user_id": current_user_id,
                 "created_at": datetime.utcnow(),
             }
             await uow.company_members.add_one(membership_data)
-            await uow.company_invitations.delete_one(invitation_id)
-            await uow.commit()
+            invitation.status = 'accepted'
 
     @staticmethod
     async def decline_invitation(uow: IUnitOfWork, invitation_id: int, current_user_id: int) -> None:
@@ -54,8 +53,7 @@ class CompanyInvitationService:
             invitation = await uow.company_invitations.find_one(id=invitation_id)
             if not invitation or invitation.invited_user_id != current_user_id:
                 raise CompanyPermissionError(f"You don't have permission to decline this invitation")
-            await uow.company_invitations.delete_one(invitation_id)
-            await uow.commit()
+            invitation.status = 'declined'
 
     @staticmethod
     async def get_invitations(uow: IUnitOfWork, user_id: int, skip: int, limit: int,
@@ -79,3 +77,4 @@ class CompanyInvitationService:
                     next=next_page_url
                 )
             )
+

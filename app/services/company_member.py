@@ -1,4 +1,3 @@
-from typing import Optional
 from app.schemas.company_member import CompanyMemberListResponse, CompanyMemberResponse, PaginationLinks
 from app.utils.unitofwork import IUnitOfWork
 from app.core.exceptions import CompanyPermissionError, MemberNotFound
@@ -15,7 +14,6 @@ class CompanyMemberService:
             if company.owner_id != current_user_id:
                 raise CompanyPermissionError("You don't have permission to remove this member")
             await uow.company_members.delete_one(member_id)
-            await uow.commit()
 
     @staticmethod
     async def leave_company(uow: IUnitOfWork, company_id: int, current_user_id: int) -> None:
@@ -24,7 +22,7 @@ class CompanyMemberService:
             if not member:
                 raise MemberNotFound("You are not a member of this company")
             await uow.company_members.delete_one(member.id)
-            await uow.commit()
+
 
     @staticmethod
     async def get_memberships(

@@ -6,13 +6,13 @@ from app.core.exceptions import CompanyPermissionError, RequestNotFound
 
 class CompanyRequestService:
     @staticmethod
-    async def request_to_join_company(uow: IUnitOfWork, request: CompanyRequestCreate, current_user_id: int) -> CompanyRequestResponse:
+    async def request_to_join_company(uow: IUnitOfWork, request: CompanyRequestCreate,
+                                      current_user_id: int) -> CompanyRequestResponse:
         request_dict = request.dict()
         request_dict['requested_user_id'] = current_user_id
         async with uow:
             new_request = await uow.company_requests.add_one(request_dict)
-            await uow.commit()
-            return CompanyRequestResponse(**new_request)
+            return CompanyRequestResponse.model_validate(new_request)
 
     @staticmethod
     async def cancel_request(uow: IUnitOfWork, request_id: int, current_user_id: int) -> None:
@@ -21,7 +21,6 @@ class CompanyRequestService:
             if not request or request.requested_user_id != current_user_id:
                 raise CompanyPermissionError("You don't have permission to cancel this request")
             await uow.company_requests.delete_one(request_id)
-            await uow.commit()
 
     @staticmethod
     async def accept_request(uow: IUnitOfWork, request_id: int, current_user_id: int) -> None:
@@ -33,8 +32,7 @@ class CompanyRequestService:
             if company.owner_id != current_user_id:
                 raise CompanyPermissionError("You don't have permission to accept this request")
             await uow.company_members.add_one({"user_id": request.requested_user_id, "company_id": request.company_id})
-            await uow.company_requests.delete_one(request_id)
-            await uow.commit()
+            request.status = 'accepted'
 
     @staticmethod
     async def decline_request(uow: IUnitOfWork, request_id: int, current_user_id: int) -> None:
@@ -45,11 +43,11 @@ class CompanyRequestService:
             company = await uow.companies.find_one(id=request.company_id)
             if company.owner_id != current_user_id:
                 raise CompanyPermissionError("You don't have permission to decline this request")
-            await uow.company_requests.delete_one(request_id)
-            await uow.commit()
+            request.status = 'declined'
 
     @staticmethod
-    async def get_requests_by_user_id(uow: IUnitOfWork, user_id: int, skip: int, limit: int, request_url: str) -> CompanyRequestListResponse:
+    async def get_requests_by_user_id(uow: IUnitOfWork, user_id: int, skip: int, limit: int,
+                                      request_url: str) -> CompanyRequestListResponse:
         async with uow:
             total_requests = await uow.company_requests.count_all(user_id=user_id)
             requests = await uow.company_requests.find_all(user_id=user_id, skip=skip, limit=limit)

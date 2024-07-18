@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import HTTPBearer
 
+from app.core.exceptions import InvalidCredentials
 from app.routers.dependencies import UserServiceDep, UOWDep
 from app.schemas.auth import SignInRequest
 from app.schemas.token import Token
@@ -19,8 +20,7 @@ auth_scheme = HTTPBearer()
 async def sign_in(request: SignInRequest, uow: UOWDep, user_service: UserServiceDep) -> Token:
     token = await user_service.authenticate_user(uow, request.email, request.password)
     if token is None:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-
+        raise InvalidCredentials("Token is None")
     return token
 
 

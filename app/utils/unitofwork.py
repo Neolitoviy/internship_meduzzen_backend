@@ -1,5 +1,4 @@
 from abc import abstractmethod, ABC
-from typing import Type
 from app.db.database import async_session
 from app.repositories.company import CompanyRepository
 from app.repositories.company_invitation import CompanyInvitationRepository
@@ -9,11 +8,11 @@ from app.repositories.user import UserRepository
 
 
 class IUnitOfWork(ABC):
-    users: Type[UserRepository]
-    companies: Type[CompanyRepository]
-    company_invitations: Type[CompanyInvitationRepository]
-    company_members: Type[CompanyMemberRepository]
-    company_requests: Type[CompanyRequestRepository]
+    users: UserRepository
+    companies: CompanyRepository
+    company_invitations: CompanyInvitationRepository
+    company_members: CompanyMemberRepository
+    company_requests: CompanyRequestRepository
 
     @abstractmethod
     def __init__(self):
@@ -52,10 +51,11 @@ class UnitOfWork(IUnitOfWork):
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         if exc_type is not None:
             await self.rollback()
-            raise exc_val.with_traceback(exc_tb)  # With traceback
         else:
             await self.commit()
         await self.session.close()
+        if exc_type is not None:
+            raise exc_val.with_traceback(exc_tb)  # With traceback
 
     async def commit(self):
         await self.session.commit()
