@@ -21,8 +21,6 @@ class AnswerService:
                 'is_correct': answer_data.is_correct,
                 'question_id': question_id
             })
-
-            await uow.commit()
             return AnswerSchemaResponse.model_validate(new_answer)
 
     @staticmethod
@@ -40,7 +38,6 @@ class AnswerService:
                 raise PermissionDenied("You do not have permission to update this answer")
 
             updated_answer = await uow.answers.edit_one(answer_id, answer_data.model_dump(exclude_unset=True))
-            await uow.commit()
             return AnswerSchemaResponse.model_validate(updated_answer)
 
     @staticmethod
@@ -55,9 +52,7 @@ class AnswerService:
             if company.owner_id != current_user_id and not await uow.company_members.find_one(
                     company_id=quiz.company_id, user_id=current_user_id, is_admin=True):
                 raise PermissionDenied("You do not have permission to delete this answer")
-
             await uow.answers.delete_one(answer_id)
-            await uow.commit()
 
     @staticmethod
     async def get_answers_by_question_id(uow: IUnitOfWork, question_id: int, current_user_id: int, skip: int,
