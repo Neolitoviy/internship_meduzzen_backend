@@ -14,26 +14,25 @@ class CompanyMemberService:
             if company.owner_id != current_user_id:
                 raise CompanyPermissionError("You don't have permission to remove this member")
             await uow.company_members.delete_one(member_id)
-            await uow.commit()
 
     @staticmethod
     async def leave_company(uow: IUnitOfWork, company_id: int, current_user_id: int) -> None:
         async with uow:
             member = await uow.company_members.find_one(user_id=current_user_id, company_id=company_id)
-            if not member:
-                raise MemberNotFound("You are not a member of this company")
-            await uow.company_members.delete_one(member.id)
-            await uow.commit()
+            if member:
+                await uow.company_members.delete_one(member.id)
+            raise MemberNotFound("You are not a member of this company")
 
     @staticmethod
-    async def get_memberships(uow: IUnitOfWork, user_id: int, company_id: int, skip: int, limit: int, request_url: str) -> CompanyMemberListResponse:
+    async def get_memberships(uow: IUnitOfWork, user_id: int, company_id: int, skip: int, limit: int,
+                              request_url: str) -> CompanyMemberListResponse:
         async with uow:
             company = await uow.companies.find_one(id=company_id)
             if not company or company.owner_id != user_id:
                 raise CompanyPermissionError("You don't have permission to view this company's members.")
 
             total_members = await uow.company_members.count_all(company_id=company_id)
-            members = await uow.company_members.find_all(company_id=company_id, skip=skip, limit=limit)
+            members = await uow.company_members.find_all(skip=skip, limit=limit, company_id=company_id)
             total_pages = (total_members + limit - 1) // limit
             current_page = (skip // limit) + 1
 

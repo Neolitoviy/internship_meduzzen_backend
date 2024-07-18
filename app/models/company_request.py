@@ -10,7 +10,7 @@ class CompanyRequest(Base):
     id = Column(Integer, primary_key=True, index=True)
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
     requested_user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    status = Column(String, nullable=True)
+    status = Column(String, nullable=True, default="pending")
     created_at = Column(DateTime, default=datetime.utcnow)
 
     company = relationship("Company", back_populates="requests")

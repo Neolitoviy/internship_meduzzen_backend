@@ -1,4 +1,4 @@
-from sqlalchemy import insert, select, update, delete, RowMapping, func
+from sqlalchemy import insert, select, update, delete, RowMapping, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from abc import ABC, abstractmethod
 
@@ -9,7 +9,7 @@ class AbstractRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def find_all(self, skip: int, limit: int):
+    async def find_all(self, skip: int, limit: int, **filter_by):
         raise NotImplementedError
 
     @abstractmethod
@@ -25,7 +25,7 @@ class AbstractRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def count_all(self) -> int:
+    async def count_all(self, **filter_by) -> int:
         raise NotImplementedError
 
 
@@ -51,8 +51,8 @@ class SQLAlchemyRepository(AbstractRepository):
             raise ValueError("Record not found")
         return result._mapping
 
-    async def find_all(self, skip: int, limit: int):
-        stmt = select(self.model)
+    async def find_all(self, skip: int, limit: int, **filter_by):
+        stmt = select(self.model).filter_by(**filter_by)
         res = await self.session.execute(stmt.offset(skip).limit(limit))
         return res.scalars().all()
 
@@ -69,7 +69,7 @@ class SQLAlchemyRepository(AbstractRepository):
             raise ValueError("Record not found")
         return result._mapping
 
-    async def count_all(self) -> int:
-        stmt = select(func.count()).select_from(self.model)
+    async def count_all(self, **filter_by) -> int:
+        stmt = select(func.count()).select_from(self.model).filter_by(**filter_by)
         res = await self.session.execute(stmt)
         return res.scalar()
