@@ -6,9 +6,9 @@ from fastapi.security.http import HTTPAuthorizationCredentials
 from typing import Optional, Union
 
 
-def create_jwt_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+def create_jwt_token(data: dict, expires_delta: timedelta) -> str:
     to_encode = data.copy()
-    expire = datetime.utcnow() + expires_delta
+    expire = int((datetime.utcnow() + expires_delta + timedelta(hours=3)).timestamp())
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
     return encoded_jwt

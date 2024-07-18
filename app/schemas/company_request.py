@@ -14,6 +14,7 @@ class CompanyRequestCreate(CompanyRequestBase):
 class CompanyRequestResponse(CompanyRequestBase):
     id: int
     requested_user_id: int
+    status: str
     created_at: datetime
 
     model_config = {

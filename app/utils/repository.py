@@ -1,4 +1,4 @@
-from sqlalchemy import insert, select, update, delete, RowMapping, func
+from sqlalchemy import insert, select, update, delete, RowMapping, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from abc import ABC, abstractmethod
 
