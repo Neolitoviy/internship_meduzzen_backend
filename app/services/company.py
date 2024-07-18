@@ -6,11 +6,11 @@ from app.core.exceptions import CompanyNotFound, CompanyPermissionError
 class CompanyService:
     @staticmethod
     async def create_company(uow: IUnitOfWork, company: CompanyCreate, user_id: int) -> CompanyResponse:
-        company_dict = company.dict()
+        company_dict = company.model_dump()
         company_dict['owner_id'] = user_id
         async with uow:
             new_company = await uow.companies.add_one(company_dict)
-            return CompanyResponse(**new_company)
+            return CompanyResponse.model_validate(new_company)
 
     @staticmethod
     async def get_companies(uow: IUnitOfWork, skip: int, limit: int, request_url: str,
@@ -44,7 +44,7 @@ class CompanyService:
             company = await uow.companies.find_one(id=company_id)
             if not company or (company.owner_id != current_user_id and not company.visibility):
                 raise CompanyNotFound(f"Company with id {company_id} not found")
-            return CompanyResponse(**company.__dict__)
+            return CompanyResponse.model_validate(company)
 
     async def update_company(self, uow: IUnitOfWork, company_id: int, company: CompanyUpdate,
                              current_user_id: int) -> CompanyResponse:
@@ -54,18 +54,19 @@ class CompanyService:
             updated_company = await uow.companies.edit_one(company_id, company_dict)
             if not updated_company:
                 raise CompanyNotFound(f"Company with id {company_id} not found")
-            return CompanyResponse(**updated_company)
+            return CompanyResponse.model_validate(updated_company)
 
-    async def delete_company(self, uow: IUnitOfWork, company_id: int, current_user_id: int) -> None:
+    async def delete_company(self, uow: IUnitOfWork, company_id: int, current_user_id: int) -> CompanyResponse:
         await self.check_company_owner(uow, company_id, current_user_id)
         async with uow:
             company = await uow.companies.find_one(id=company_id)
             if not company:
                 raise CompanyNotFound(f"Company with id {company_id} not found")
             await uow.companies.delete_one(company_id)
-            return CompanyResponse(**company.__dict__)
+            return CompanyResponse.model_validate(company)
 
-    async def check_company_owner(self, uow: IUnitOfWork, company_id: int, current_user_id: int) -> None:
+    @staticmethod
+    async def check_company_owner(uow: IUnitOfWork, company_id: int, current_user_id: int) -> None:
         async with uow:
             company = await uow.companies.find_one(id=company_id)
             if not company or company.owner_id != current_user_id:
