@@ -1,3 +1,4 @@
+from typing import Optional
 from app.schemas.company_member import CompanyMemberListResponse, CompanyMemberResponse, PaginationLinks
 from app.utils.unitofwork import IUnitOfWork
 from app.core.exceptions import CompanyPermissionError, MemberNotFound
@@ -23,7 +24,6 @@ class CompanyMemberService:
                 raise MemberNotFound("You are not a member of this company")
             await uow.company_members.delete_one(member.id)
 
-
     @staticmethod
     async def get_memberships(
             uow: IUnitOfWork, user_id: int, company_id: int, skip: int, limit: int,
@@ -34,11 +34,12 @@ class CompanyMemberService:
                 raise CompanyPermissionError("You don't have permission to view this company's members.")
 
             if is_admin:
-                total_members = await uow.company_members.count_admins(company_id=company_id)
-                members = await uow.company_members.find_admins(company_id=company_id, skip=skip, limit=limit)
+                total_members = await uow.company_members.count_all(company_id=company_id, is_admin=is_admin)
+                members = await uow.company_members.find_all(skip=skip, limit=limit, company_id=company_id,
+                                                             is_admin=is_admin)
             else:
                 total_members = await uow.company_members.count_all(company_id=company_id)
-                members = await uow.company_members.find_all(company_id=company_id, skip=skip, limit=limit)
+                members = await uow.company_members.find_all(skip=skip, limit=limit, company_id=company_id)
 
             total_pages = (total_members + limit - 1) // limit
             current_page = (skip // limit) + 1
@@ -69,7 +70,6 @@ class CompanyMemberService:
                 raise MemberNotFound(f"User with id {user_id} is not a member of the company.")
 
             member.is_admin = True
-            await uow.commit()
 
     @staticmethod
     async def remove_admin(uow: IUnitOfWork, company_id: int, user_id: int, current_user_id: int) -> None:
@@ -83,4 +83,3 @@ class CompanyMemberService:
                 raise MemberNotFound(f"User with id {user_id} is not a member of the company.")
 
             member.is_admin = False
-            await uow.commit()
