@@ -16,11 +16,8 @@ class CompanyService:
     async def get_companies(uow: IUnitOfWork, skip: int, limit: int, request_url: str,
                             current_user_id: int) -> CompanyListResponse:
         async with uow:
-            total_companies = await uow.companies.count_all()
-            companies = await uow.companies.find_all(skip=skip, limit=limit)
-            visible_companies = [
-                company for company in companies if company.owner_id == current_user_id or company.visibility
-            ]
+            total_companies = await uow.companies.count_visible_companies(user_id=current_user_id)
+            companies = await uow.companies.find_visible_companies(skip=skip, limit=limit, user_id=current_user_id)
             total_pages = (total_companies + limit - 1) // limit
             current_page = (skip // limit) + 1
 
@@ -31,7 +28,7 @@ class CompanyService:
             return CompanyListResponse(
                 total_pages=total_pages,
                 current_page=current_page,
-                companies=[CompanyResponse.model_validate(company) for company in visible_companies],
+                companies=[CompanyResponse.model_validate(company) for company in companies],
                 pagination=PaginationLinks(
                     previous=previous_page_url,
                     next=next_page_url
