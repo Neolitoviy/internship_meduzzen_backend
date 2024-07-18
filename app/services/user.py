@@ -92,8 +92,8 @@ class UserService:
             access_token_expires = timedelta(minutes=settings.jwt_access_token_expire_minutes)
             access_token = create_jwt_token(data={"sub": str(user.id), "email": user.email, "owner": settings.owner},
                                             expires_delta=access_token_expires)
-            return Token(access_token=access_token, token_type="Bearer",
-                         expiration=datetime.utcnow() + access_token_expires)
+            expiration_timestamp = int((datetime.utcnow() + access_token_expires + timedelta(hours=3)).timestamp())
+            return Token(access_token=access_token, token_type="Bearer", expiration=expiration_timestamp)
 
     @staticmethod
     async def create_user_from_token(uow: IUnitOfWork, token: HTTPAuthorizationCredentials) -> UserInDB:

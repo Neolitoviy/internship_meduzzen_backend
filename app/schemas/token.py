@@ -7,7 +7,7 @@ from pydantic import BaseModel
 class Token(BaseModel):
     access_token: str
     token_type: str
-    expiration: datetime
+    expiration: int  # timestamp
 
 
 class TokenData(BaseModel):
