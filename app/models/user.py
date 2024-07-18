@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, func
 from datetime import datetime
 
+from sqlalchemy.orm import relationship
 from app.models.base import Base
 
 
@@ -19,3 +20,4 @@ class User(Base):
     is_superuser = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=func.now(), nullable=False)
+    companies = relationship("Company", back_populates="owner")

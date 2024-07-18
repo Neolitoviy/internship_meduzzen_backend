@@ -1,9 +1,5 @@
 from typing import Optional
-
-from fastapi import HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
-from starlette import status
-
 from app.core.config import settings
 from app.core.hashing import Hasher
 from app.core.verify_token import VerifyToken
@@ -12,10 +8,10 @@ from app.schemas.token import Token
 from app.schemas.user import UserCreate, UserUpdate, UserResponse, UserInDB, UserListResponse, PaginationLinks
 from app.services.jwt import check_jwt_type, decode_jwt_token, create_jwt_token
 from app.utils.unitofwork import IUnitOfWork
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 from app.core.logging_config import logging_config
-from app.core.exceptions import UserNotFound, EmailAlreadyExists
+from app.core.exceptions import UserNotFound, EmailAlreadyExists, PermissionDenied, BadRequest, InvalidCredentials
 
 logger = logging.getLogger(__name__)
 
@@ -24,15 +20,12 @@ class UserService:
     @staticmethod
     async def create_user(uow: IUnitOfWork, user: UserCreate) -> UserResponse:
         user_dict = user.model_dump()
-        user_dict.pop('password1', None)
-        user_dict.pop('password2', None)
         async with uow:
             existing_user = await uow.users.find_one(email=user_dict['email'])
             if existing_user:
                 raise EmailAlreadyExists(f"User with email {user_dict['email']} already exists")
             new_user = await uow.users.add_one(user_dict)
-            await uow.commit()
-            return UserResponse(**new_user)
+            return UserResponse.model_validate(new_user)
 
     @staticmethod
     async def get_users(uow: IUnitOfWork, skip: int, limit: int, request_url: str) -> UserListResponse:
@@ -62,7 +55,7 @@ class UserService:
             user = await uow.users.find_one(id=user_id)
             if not user:
                 raise UserNotFound(f"User with id {user_id} not found")
-            return UserResponse(**user.__dict__)
+            return UserResponse.model_validate(user)
 
     @staticmethod
     async def get_user_by_email(uow: IUnitOfWork, email: str) -> UserInDB:
@@ -70,7 +63,7 @@ class UserService:
             user = await uow.users.find_one(email=email)
             if not user:
                 raise UserNotFound(f"User with email {email} not found")
-            return UserInDB(**user.__dict__)
+            return UserInDB.model_validate(user)
 
     async def update_user(self, uow: IUnitOfWork, user_id: int, user: UserUpdate, current_user_id: int) -> UserResponse:
         await self.check_user_permission(user_id, current_user_id)
@@ -79,8 +72,7 @@ class UserService:
             updated_user = await uow.users.edit_one(user_id, user_dict)
             if not updated_user:
                 raise UserNotFound(f"User with id {user_id} not found")
-            await uow.commit()
-            return UserResponse(**updated_user)
+            return UserResponse.model_validate(updated_user)
 
     async def delete_user(self, uow: IUnitOfWork, user_id: int, current_user_id: int) -> UserResponse:
         await self.check_user_permission(user_id, current_user_id)
@@ -89,17 +81,19 @@ class UserService:
             if not user:
                 raise UserNotFound(f"User with id {user_id} not found")
             await uow.users.delete_one(user_id)
-            await uow.commit()
-            return UserResponse(**user.__dict__)
+            return UserResponse.model_validate(user)
 
     @staticmethod
     async def authenticate_user(uow: IUnitOfWork, email: str, password: str) -> Optional[Token]:
         async with uow:
             user = await uow.users.find_one(email=email)
             if user is None or not Hasher.verify_password(password, user.hashed_password):
-                return None
-            access_token = create_jwt_token(data={"sub": str(user.id), "email": user.email, "owner": settings.owner})
-            return Token(access_token=access_token, token_type="Bearer")
+                raise InvalidCredentials("Invalid email or password")
+            access_token_expires = timedelta(minutes=settings.jwt_access_token_expire_minutes)
+            access_token = create_jwt_token(data={"sub": str(user.id), "email": user.email, "owner": settings.owner},
+                                            expires_delta=access_token_expires)
+            expiration_timestamp = int((datetime.utcnow() + access_token_expires + timedelta(hours=3)).timestamp())
+            return Token(access_token=access_token, token_type="Bearer", expiration=expiration_timestamp)
 
     @staticmethod
     async def create_user_from_token(uow: IUnitOfWork, token: HTTPAuthorizationCredentials) -> UserInDB:
@@ -107,11 +101,11 @@ class UserService:
         async with uow:
             user = await uow.users.find_one(email=current_email)
             if user is None and current_email is None:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Not Found or Bad Request")
+                raise BadRequest("Invalid token")
             if not user:
                 user_data = UserAuthCreate(email=current_email, password=str(datetime.utcnow()))
-                user = await UserService.create_user(uow, user=UserCreate(**user_data.dict()))
-            return UserInDB(**user.__dict__)
+                user = await UserService.create_user(uow, user=UserCreate.model_validate(user_data))
+            return UserInDB.model_validate(user)
 
     @staticmethod
     async def get_email_from_token(token: HTTPAuthorizationCredentials) -> Optional[str]:
@@ -127,4 +121,4 @@ class UserService:
     @staticmethod
     async def check_user_permission(user_id: int, current_user_id: int) -> None:
         if user_id != current_user_id:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="You don't have permission!")
+            raise PermissionDenied("You don't have permission!")

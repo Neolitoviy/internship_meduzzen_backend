@@ -6,6 +6,7 @@ from app.core.exception_handlers import register_exception_handlers
 from app.routers.user import router as users_router
 from app.routers.healthcheck import router as health_router
 from app.routers.auth import router as auth_router
+from app.routers.company import router as company_router
 from app.core.logging_config import logging_config
 import logging
 
@@ -28,6 +29,7 @@ app.add_middleware(
 app.include_router(users_router)
 app.include_router(health_router)
 app.include_router(auth_router)
+app.include_router(company_router)
 
 if __name__ == "__main__":
     uvicorn.run(app, host=settings.host, port=settings.port)
