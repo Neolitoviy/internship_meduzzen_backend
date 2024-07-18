@@ -80,8 +80,8 @@ class UserService:
             user = await uow.users.find_one(id=user_id)
             if not user:
                 raise UserNotFound(f"User with id {user_id} not found")
-            await uow.users.delete_one(user_id)
-            return UserResponse.model_validate(user)
+            updated_user = await uow.users.edit_one(user_id, {"is_active": False})
+            return UserResponse.model_validate(updated_user)
 
     @staticmethod
     async def authenticate_user(uow: IUnitOfWork, email: str, password: str) -> Optional[Token]:
