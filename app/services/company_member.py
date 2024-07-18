@@ -15,7 +15,6 @@ class CompanyMemberService:
             if company.owner_id != current_user_id:
                 raise CompanyPermissionError("You don't have permission to remove this member")
             await uow.company_members.delete_one(member_id)
-            await uow.commit()
 
     @staticmethod
     async def leave_company(uow: IUnitOfWork, company_id: int, current_user_id: int) -> None:
@@ -24,7 +23,6 @@ class CompanyMemberService:
             if not member:
                 raise MemberNotFound("You are not a member of this company")
             await uow.company_members.delete_one(member.id)
-            await uow.commit()
 
     @staticmethod
     async def get_memberships(
@@ -72,7 +70,6 @@ class CompanyMemberService:
                 raise MemberNotFound(f"User with id {user_id} is not a member of the company.")
 
             member.is_admin = True
-            await uow.commit()
 
     @staticmethod
     async def remove_admin(uow: IUnitOfWork, company_id: int, user_id: int, current_user_id: int) -> None:
@@ -86,4 +83,3 @@ class CompanyMemberService:
                 raise MemberNotFound(f"User with id {user_id} is not a member of the company.")
 
             member.is_admin = False
-            await uow.commit()

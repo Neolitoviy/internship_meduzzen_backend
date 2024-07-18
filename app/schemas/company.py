@@ -19,7 +19,6 @@ class CompanyCreate(CompanyBase):
 
 class CompanyUpdate(CompanyBase):
     name: Optional[str] = None
-    description: Optional[str] = None
     visibility: Optional[bool] = None
 
 
