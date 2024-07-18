@@ -16,14 +16,9 @@ class IUnitOfWork(ABC):
     company_invitations: CompanyInvitationRepository
     company_members: CompanyMemberRepository
     company_requests: CompanyRequestRepository
-    users: Type[UserRepository]
-    companies: Type[CompanyRepository]
-    company_invitations: Type[CompanyInvitationRepository]
-    company_members: Type[CompanyMemberRepository]
-    company_requests: Type[CompanyRequestRepository]
-    quizzes: Type[QuizRepository]
-    questions: Type[QuestionRepository]
-    answers: Type[AnswerRepository]
+    quizzes: QuizRepository
+    questions: QuestionRepository
+    answers: AnswerRepository
 
     @abstractmethod
     def __init__(self):
