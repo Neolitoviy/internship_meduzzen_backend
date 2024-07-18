@@ -1,4 +1,3 @@
-from typing import Optional
 from app.schemas.company_member import CompanyMemberListResponse, CompanyMemberResponse, PaginationLinks
 from app.utils.unitofwork import IUnitOfWork
 from app.core.exceptions import CompanyPermissionError, MemberNotFound
@@ -51,7 +50,7 @@ class CompanyMemberService:
             return CompanyMemberListResponse(
                 current_page=current_page,
                 total_pages=total_pages,
-                members=[CompanyMemberResponse(**member.__dict__) for member in members],
+                members=[CompanyMemberResponse.model_validate(member) for member in members],
                 pagination=PaginationLinks(
                     previous=previous_page_url,
                     next=next_page_url
