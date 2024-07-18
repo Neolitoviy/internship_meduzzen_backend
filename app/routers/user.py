@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request
 from app.routers.dependencies import UOWDep, UserServiceDep, CurrentUserDep
-from app.schemas.user import UserCreate, UserUpdate, UserResponse, UserListResponse
+from app.schemas.user import UserCreate, UserUpdate, UserResponse, UserListResponse, UserCreateInput
 import logging
 from app.core.logging_config import logging_config
 
@@ -13,8 +13,8 @@ router = APIRouter(
 
 
 @router.post("/", response_model=UserResponse)
-async def create_user(user: UserCreate, uow: UOWDep, user_service: UserServiceDep):
-    return await user_service.create_user(uow, user)
+async def create_user(user: UserCreateInput, uow: UOWDep, user_service: UserServiceDep):
+    return await user_service.create_user(uow, UserCreate(**user.dict()))
 
 
 @router.get("/", response_model=UserListResponse)

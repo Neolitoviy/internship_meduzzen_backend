@@ -19,10 +19,9 @@ class UserBase(BaseModel):
     }
 
 
-class UserCreate(UserBase):
+class UserCreateInput(UserBase):
     password1: Optional[str] = Field(None, min_length=6)
     password2: Optional[str] = Field(None, min_length=6)
-    hashed_password: Optional[str] = None
 
     @model_validator(mode='before')
     @classmethod
@@ -30,6 +29,12 @@ class UserCreate(UserBase):
         if values.get('password1') and values.get('password2') and values['password1'] != values['password2']:
             raise ValueError('Passwords do not match')
         return values
+
+
+class UserCreate(UserBase):
+    password1: Optional[str] = Field(None, min_length=6, exclude=True)
+    password2: Optional[str] = Field(None, min_length=6, exclude=True)
+    hashed_password: Optional[str] = None
 
     @model_validator(mode='before')
     @classmethod

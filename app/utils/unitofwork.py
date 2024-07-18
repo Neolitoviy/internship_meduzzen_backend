@@ -52,10 +52,11 @@ class UnitOfWork(IUnitOfWork):
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         if exc_type is not None:
             await self.rollback()
-            raise exc_val.with_traceback(exc_tb)  # With traceback
         else:
             await self.commit()
         await self.session.close()
+        if exc_type is not None:
+            raise exc_val.with_traceback(exc_tb)  # With traceback
 
     async def commit(self):
         await self.session.commit()

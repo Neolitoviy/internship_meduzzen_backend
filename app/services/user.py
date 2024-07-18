@@ -20,15 +20,12 @@ class UserService:
     @staticmethod
     async def create_user(uow: IUnitOfWork, user: UserCreate) -> UserResponse:
         user_dict = user.model_dump()
-        user_dict.pop('password1', None)
-        user_dict.pop('password2', None)
         async with uow:
             existing_user = await uow.users.find_one(email=user_dict['email'])
             if existing_user:
                 raise EmailAlreadyExists(f"User with email {user_dict['email']} already exists")
             new_user = await uow.users.add_one(user_dict)
-            await uow.commit()
-            return UserResponse(**new_user)
+            return UserResponse.model_validate(new_user)
 
     @staticmethod
     async def get_users(uow: IUnitOfWork, skip: int, limit: int, request_url: str) -> UserListResponse:
@@ -58,7 +55,7 @@ class UserService:
             user = await uow.users.find_one(id=user_id)
             if not user:
                 raise UserNotFound(f"User with id {user_id} not found")
-            return UserResponse(**user.__dict__)
+            return UserResponse.model_validate(user)
 
     @staticmethod
     async def get_user_by_email(uow: IUnitOfWork, email: str) -> UserInDB:
@@ -66,7 +63,7 @@ class UserService:
             user = await uow.users.find_one(email=email)
             if not user:
                 raise UserNotFound(f"User with email {email} not found")
-            return UserInDB(**user.__dict__)
+            return UserInDB.model_validate(user)
 
     async def update_user(self, uow: IUnitOfWork, user_id: int, user: UserUpdate, current_user_id: int) -> UserResponse:
         await self.check_user_permission(user_id, current_user_id)
@@ -75,8 +72,7 @@ class UserService:
             updated_user = await uow.users.edit_one(user_id, user_dict)
             if not updated_user:
                 raise UserNotFound(f"User with id {user_id} not found")
-            await uow.commit()
-            return UserResponse(**updated_user)
+            return UserResponse.model_validate(updated_user)
 
     async def delete_user(self, uow: IUnitOfWork, user_id: int, current_user_id: int) -> UserResponse:
         await self.check_user_permission(user_id, current_user_id)
@@ -85,8 +81,7 @@ class UserService:
             if not user:
                 raise UserNotFound(f"User with id {user_id} not found")
             await uow.users.delete_one(user_id)
-            await uow.commit()
-            return UserResponse(**user.__dict__)
+            return UserResponse.model_validate(user)
 
     @staticmethod
     async def authenticate_user(uow: IUnitOfWork, email: str, password: str) -> Optional[Token]:
@@ -97,8 +92,8 @@ class UserService:
             access_token_expires = timedelta(minutes=settings.jwt_access_token_expire_minutes)
             access_token = create_jwt_token(data={"sub": str(user.id), "email": user.email, "owner": settings.owner},
                                             expires_delta=access_token_expires)
-            return Token(access_token=access_token, token_type="Bearer",
-                         expiration=datetime.utcnow() + access_token_expires)
+            expiration_timestamp = int((datetime.utcnow() + access_token_expires + timedelta(hours=3)).timestamp())
+            return Token(access_token=access_token, token_type="Bearer", expiration=expiration_timestamp)
 
     @staticmethod
     async def create_user_from_token(uow: IUnitOfWork, token: HTTPAuthorizationCredentials) -> UserInDB:
