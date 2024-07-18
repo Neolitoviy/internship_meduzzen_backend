@@ -8,7 +8,7 @@ class CompanyRequestService:
     @staticmethod
     async def request_to_join_company(uow: IUnitOfWork, request: CompanyRequestCreate,
                                       current_user_id: int) -> CompanyRequestResponse:
-        request_dict = request.dict()
+        request_dict = request.model_dump()
         request_dict['requested_user_id'] = current_user_id
         async with uow:
             new_request = await uow.company_requests.add_one(request_dict)
