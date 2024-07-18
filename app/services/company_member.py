@@ -15,6 +15,7 @@ class CompanyMemberService:
                 raise CompanyPermissionError("You don't have permission to remove this member")
             await uow.company_members.delete_one(member_id)
 
+    @staticmethod
     async def leave_company(uow: IUnitOfWork, company_id: int, current_user_id: int) -> None:
         async with uow:
             member = await uow.company_members.find_one(user_id=current_user_id, company_id=company_id)
@@ -22,10 +23,8 @@ class CompanyMemberService:
                 raise MemberNotFound("You are not a member of this company")
             await uow.company_members.delete_one(member.id)
 
-
     @staticmethod
-    async def get_memberships(uow: IUnitOfWork, user_id: int, company_id: int, skip: int, limit: int,
-                              request_url: str) -> CompanyMemberListResponse:
+    async def get_memberships(uow: IUnitOfWork, user_id: int, company_id: int, skip: int, limit: int, request_url: str) -> CompanyMemberListResponse:
         async with uow:
             company = await uow.companies.find_one(id=company_id)
             if not company or company.owner_id != user_id:
@@ -43,7 +42,7 @@ class CompanyMemberService:
             return CompanyMemberListResponse(
                 current_page=current_page,
                 total_pages=total_pages,
-                members=[CompanyMemberResponse(**member.__dict__) for member in members],
+                members=[CompanyMemberResponse.model_validate(member) for member in members],
                 pagination=PaginationLinks(
                     previous=previous_page_url,
                     next=next_page_url
