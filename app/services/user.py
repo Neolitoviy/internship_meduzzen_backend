@@ -87,7 +87,11 @@ class UserService:
     async def authenticate_user(uow: IUnitOfWork, email: str, password: str) -> Optional[Token]:
         async with uow:
             user = await uow.users.find_one(email=email)
-            if user is None or not Hasher.verify_password(password, user.hashed_password):
+            if user is None:
+                raise UserNotFound("Invalid email or password")
+            if not user.is_active:
+                raise UserNotFound("Account is deactivated")
+            if not Hasher.verify_password(password, user.hashed_password):
                 raise InvalidCredentials("Invalid email or password")
             access_token_expires = timedelta(minutes=settings.jwt_access_token_expire_minutes)
             access_token = create_jwt_token(data={"sub": str(user.id), "email": user.email, "owner": settings.owner},
