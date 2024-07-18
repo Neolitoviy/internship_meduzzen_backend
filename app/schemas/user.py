@@ -39,33 +39,36 @@ class UserCreate(UserBase):
     @model_validator(mode='before')
     @classmethod
     def hash_password(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        if values.get('password1'):
-            values['hashed_password'] = Hasher.get_password_hash(values['password1'])
-        return values
+        values_dict = values.model_dump(exclude_unset=True)
+
+        if 'password1' in values_dict and values_dict['password1']:
+            hashed_password = Hasher.get_password_hash(values_dict['password1'])
+            values_dict['hashed_password'] = hashed_password
+        return values_dict
 
     model_config = {
         'from_attributes': True
     }
 
 
-class UserUpdate(BaseModel):
+class UserUpdateInput(BaseModel):
     firstname: Optional[str] = None
     lastname: Optional[str] = None
-    password: Optional[str] = None
+    password: Optional[str] = Field(None, min_length=6)
+
+
+class UserUpdate(UserUpdateInput):
+    password: Optional[str] = Field(None, min_length=6, exclude=True)
+    hashed_password: Optional[str] = None
 
     @model_validator(mode='before')
     @classmethod
     def hash_password(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        if 'password' in values:
-            values['hashed_password'] = Hasher.get_password_hash(values['password'])
-            values.pop('password', None)
-        return values
-
-    @model_validator(mode='before')
-    @classmethod
-    def set_updated_at(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        values['updated_at'] = datetime.utcnow()
-        return values
+        values_dict = values.model_dump(exclude_unset=True)
+        if 'password' in values_dict and values_dict['password'] is not None:
+            hashed_password = Hasher.get_password_hash(values_dict['password'])
+            values_dict['hashed_password'] = hashed_password
+        return values_dict
 
     model_config = {
         'from_attributes': True
