@@ -10,7 +10,6 @@ class CompanyService:
         company_dict['owner_id'] = user_id
         async with uow:
             new_company = await uow.companies.add_one(company_dict)
-            await uow.commit()
             return CompanyResponse(**new_company)
 
     @staticmethod
@@ -55,7 +54,6 @@ class CompanyService:
             updated_company = await uow.companies.edit_one(company_id, company_dict)
             if not updated_company:
                 raise CompanyNotFound(f"Company with id {company_id} not found")
-            await uow.commit()
             return CompanyResponse(**updated_company)
 
     async def delete_company(self, uow: IUnitOfWork, company_id: int, current_user_id: int) -> None:
@@ -65,7 +63,6 @@ class CompanyService:
             if not company:
                 raise CompanyNotFound(f"Company with id {company_id} not found")
             await uow.companies.delete_one(company_id)
-            await uow.commit()
             return CompanyResponse(**company.__dict__)
 
     async def check_company_owner(self, uow: IUnitOfWork, company_id: int, current_user_id: int) -> None:
