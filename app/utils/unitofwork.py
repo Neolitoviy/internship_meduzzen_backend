@@ -20,15 +20,7 @@ class IUnitOfWork(ABC):
     quizzes: QuizRepository
     questions: QuestionRepository
     answers: AnswerRepository
-    users: Type[UserRepository]
-    companies: Type[CompanyRepository]
-    company_invitations: Type[CompanyInvitationRepository]
-    company_members: Type[CompanyMemberRepository]
-    company_requests: Type[CompanyRequestRepository]
-    quizzes: Type[QuizRepository]
-    questions: Type[QuestionRepository]
-    answers: Type[AnswerRepository]
-    quiz_results: Type[QuizResultRepository]
+    quiz_results: QuizResultRepository
 
     @abstractmethod
     def __init__(self):
