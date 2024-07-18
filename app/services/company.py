@@ -42,9 +42,9 @@ class CompanyService:
     async def get_company_by_id(uow: IUnitOfWork, company_id: int, current_user_id: int) -> CompanyResponse:
         async with uow:
             company = await uow.companies.find_one(id=company_id)
-            if not company or (company.owner_id != current_user_id and not company.visibility):
-                raise CompanyNotFound(f"Company with id {company_id} not found")
-            return CompanyResponse.model_validate(company)
+            if company and (company.owner_id == current_user_id or company.visibility):
+                return CompanyResponse.model_validate(company)
+            raise CompanyNotFound(f"Company with id {company_id} not found")
 
     async def update_company(self, uow: IUnitOfWork, company_id: int, company: CompanyUpdate,
                              current_user_id: int) -> CompanyResponse:
