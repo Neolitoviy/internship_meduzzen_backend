@@ -15,13 +15,13 @@ class CompanyMemberService:
                 raise CompanyPermissionError("You don't have permission to remove this member")
             await uow.company_members.delete_one(member_id)
 
-    @staticmethod
     async def leave_company(uow: IUnitOfWork, company_id: int, current_user_id: int) -> None:
         async with uow:
             member = await uow.company_members.find_one(user_id=current_user_id, company_id=company_id)
-            if member:
-                await uow.company_members.delete_one(member.id)
-            raise MemberNotFound("You are not a member of this company")
+            if not member:
+                raise MemberNotFound("You are not a member of this company")
+            await uow.company_members.delete_one(member.id)
+
 
     @staticmethod
     async def get_memberships(uow: IUnitOfWork, user_id: int, company_id: int, skip: int, limit: int,

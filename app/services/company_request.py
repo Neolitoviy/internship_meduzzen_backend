@@ -50,7 +50,7 @@ class CompanyRequestService:
                                       request_url: str) -> CompanyRequestListResponse:
         async with uow:
             total_requests = await uow.company_requests.count_all(user_id=user_id)
-            requests = await uow.company_requests.find_all(skip=skip, limit=limit, user_id=user_id)
+            requests = await uow.company_requests.find_all(user_id=user_id, skip=skip, limit=limit)
             total_pages = (total_requests + limit - 1) // limit
             current_page = (skip // limit) + 1
 
