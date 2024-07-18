@@ -33,7 +33,7 @@ class CompanyRequestService:
                 raise CompanyPermissionError("You don't have permission to accept this request")
 
             if await uow.company_members.find_one(company_id=request.company_id, user_id=request.requested_user_id):
-                raise CompanyPermissionError(f"This user is already a member of the company")
+                raise CompanyPermissionError("This user is already a member of the company")
 
             await uow.company_members.add_one({"user_id": request.requested_user_id, "company_id": request.company_id})
             request.status = 'accepted'
