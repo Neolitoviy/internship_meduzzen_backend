@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.exception_handlers import register_exception_handlers
+from app.db.redis_client import get_redis_client
 from app.routers.user import router as users_router
 from app.routers.healthcheck import router as health_router
 from app.routers.auth import router as auth_router
@@ -31,6 +32,19 @@ app.add_middleware(
     allow_methods=["*"],  # All
     allow_headers=["*"],  # All
 )
+
+
+@app.on_event("startup")
+async def startup_event():
+    client = await get_redis_client()
+    await client.ping()
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    client = await get_redis_client()
+    await client.close()
+
 
 # Routes
 app.include_router(users_router)

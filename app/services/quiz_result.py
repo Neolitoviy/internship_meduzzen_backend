@@ -1,4 +1,5 @@
-from app.schemas.quiz_result import QuizResultResponse, QuizVoteRequest
+from app.db.redis_client import save_quiz_vote_to_redis
+from app.schemas.quiz_result import QuizResultResponse, QuizVoteRequest, QuizVoteCreate
 from app.utils.unitofwork import IUnitOfWork
 from app.core.exceptions import QuizNotFound, PermissionDenied, QuestionNotFound, AnswerNotFound
 from datetime import datetime
@@ -29,9 +30,20 @@ class QuizResultService:
                 if not answer or answer.question_id != question_id:
                     raise AnswerNotFound(f"Answer {answer_id} not found for question {question_id}")
 
-                if answer.is_correct:
+                is_correct = answer.is_correct
+                if is_correct:
                     total_answers += 1
                 total_questions += 1
+
+                vote = QuizVoteCreate(
+                    user_id=user_id,
+                    company_id=company_id,
+                    quiz_id=quiz_id,
+                    question_id=question_id,
+                    answer=answer.answer_text,
+                    is_correct=is_correct
+                )
+                await save_quiz_vote_to_redis(vote)
 
             score = round((total_answers / total_questions) * 100, 2)
 

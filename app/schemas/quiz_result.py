@@ -24,3 +24,12 @@ class QuizResultResponse(QuizResultCreate):
 
 class QuizVoteRequest(BaseModel):
     answers: Dict[int, int]
+
+
+class QuizVoteCreate(BaseModel):
+    user_id: int
+    company_id: int
+    quiz_id: int
+    question_id: int
+    answer: str
+    is_correct: bool
