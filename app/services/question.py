@@ -28,7 +28,6 @@ class QuestionService:
                     'question_id': new_question.id
                 })
 
-            await uow.commit()
             return QuestionSchemaResponse.model_validate(new_question)
 
     @staticmethod
@@ -45,7 +44,6 @@ class QuestionService:
                 raise PermissionDenied("You do not have permission to update this question")
 
             updated_question = await uow.questions.edit_one(question_id, question_data.model_dump(exclude_unset=True))
-            await uow.commit()
             return QuestionSchemaResponse.model_validate(updated_question)
 
     @staticmethod
@@ -61,7 +59,6 @@ class QuestionService:
                 raise PermissionDenied("You do not have permission to delete this question")
 
             await uow.questions.delete_one(question_id)
-            await uow.commit()
 
     @staticmethod
     async def get_questions_by_quiz_id(uow: IUnitOfWork, quiz_id: int, current_user_id: int, skip: int, limit: int) -> \

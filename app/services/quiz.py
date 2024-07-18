@@ -35,7 +35,6 @@ class QuizService:
                         'question_id': new_question.id
                     })
 
-            await uow.commit()
             return QuizSchemaResponse.model_validate(new_quiz)
 
     @staticmethod
@@ -77,9 +76,7 @@ class QuizService:
                 raise QuizNotFound(f"Quiz with id {quiz_id} not found")
             if quiz.user_id != current_user_id:
                 raise CompanyPermissionError("You don't have permission to update this quiz.")
-
             updated_quiz = await uow.quizzes.edit_one(quiz_id, update_data.dict())
-            await uow.commit()
             return QuizSchemaResponse.model_validate(updated_quiz)
 
     @staticmethod
@@ -90,6 +87,4 @@ class QuizService:
                 raise QuizNotFound(f"Quiz with id {quiz_id} not found")
             if quiz.user_id != current_user_id:
                 raise CompanyPermissionError("You don't have permission to delete this quiz.")
-
             await uow.quizzes.delete_one(quiz_id)
-            await uow.commit()
