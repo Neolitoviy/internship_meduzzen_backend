@@ -1,3 +1,5 @@
+from typing import Optional
+
 from app.schemas.company_member import CompanyMemberListResponse, CompanyMemberResponse, PaginationLinks
 from app.utils.unitofwork import IUnitOfWork
 from app.core.exceptions import CompanyPermissionError, MemberNotFound
