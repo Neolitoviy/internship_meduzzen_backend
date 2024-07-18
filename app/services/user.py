@@ -20,8 +20,6 @@ class UserService:
     @staticmethod
     async def create_user(uow: IUnitOfWork, user: UserCreate) -> UserResponse:
         user_dict = user.model_dump()
-        user_dict.pop('password1', None)
-        user_dict.pop('password2', None)
         async with uow:
             existing_user = await uow.users.find_one(email=user_dict['email'])
             if existing_user:
