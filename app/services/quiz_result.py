@@ -3,7 +3,7 @@ from typing import List
 from app.db.redis_db import get_redis_client
 from app.schemas.quiz_result import QuizResultResponse, QuizVoteRequest, UserQuizVote
 from app.utils.unitofwork import IUnitOfWork
-from app.core.exceptions import QuizNotFound, PermissionDenied, QuestionNotFound, AnswerNotFound
+from app.core.exceptions import QuizNotFound, PermissionDenied, QuestionNotFound, AnswerNotFound, CompanyNotFound
 from datetime import datetime
 
 
@@ -91,9 +91,13 @@ class QuizResultService:
                                         quiz_id: int) -> List[UserQuizVote]:
         async with uow:
             company = await uow.companies.find_one(id=company_id)
-            if company.owner_id != user_id and not await uow.company_members.find_one(company_id=company_id,
-                                                                                      user_id=current_user_id):
-                raise PermissionDenied("You do not have permission to view this company's quiz votes.")
+            if not company:
+                raise QuizNotFound("Company not found")
+            if user_id != current_user_id:
+                if company.owner_id != current_user_id and not await uow.company_members.find_one(company_id=company_id,
+                                                                                                  user_id=current_user_id,
+                                                                                                  is_admin=True):
+                    raise PermissionDenied("You do not have permission to view this company's quiz votes.")
         connection = await get_redis_client()
         user_key_pattern = f"quiz_vote:{user_id}:{company_id}:{quiz_id}:*"
         user_keys = await connection.keys(user_key_pattern)
@@ -113,9 +117,13 @@ class QuizResultService:
                              question_id: int):
         async with uow:
             company = await uow.companies.find_one(id=company_id)
-            if company.owner_id != user_id and not await uow.company_members.find_one(company_id=company_id,
-                                                                                      user_id=current_user_id):
-                raise PermissionDenied("You do not have permission to view this company's quiz votes.")
+            if not company:
+                raise CompanyNotFound("Company not found")
+            if user_id != current_user_id:
+                if company.owner_id != current_user_id and not await uow.company_members.find_one(company_id=company_id,
+                                                                                                  user_id=current_user_id,
+                                                                                                  is_admin=True):
+                    raise PermissionDenied("You do not have permission to view this company's quiz votes.")
         connection = await get_redis_client()
         key = f"quiz_vote:{user_id}:{company_id}:{quiz_id}:{question_id}"
         data = await connection.get(key)
