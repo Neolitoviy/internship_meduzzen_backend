@@ -1,4 +1,6 @@
+import csv
 import json
+from io import StringIO
 from typing import List
 from app.db.redis_db import get_redis_client
 from app.schemas.quiz_result import QuizResultResponse, QuizVoteRequest, UserQuizVote
@@ -130,3 +132,35 @@ class QuizResultService:
         if data:
             return json.loads(data)
         return {"status": "not found"}
+
+    @staticmethod
+    async def export_quiz_results_from_redis_to_csv(uow: IUnitOfWork, current_user_id: int, user_id: int,
+                                                    company_id: int, quiz_id: int) -> str:
+        quiz_votes = await QuizResultService.get_quiz_votes_from_redis(uow, current_user_id, user_id, company_id,
+                                                                       quiz_id)
+        output = StringIO()
+        writer = csv.writer(output)
+        writer.writerow(
+            ['User ID', 'Company ID', 'Quiz ID', 'Question ID', 'Question Text', 'Answer Text', 'Is Correct',
+             'Timestamp'])
+
+        for vote in quiz_votes:
+            writer.writerow([
+                vote.user_id,
+                vote.company_id,
+                vote.quiz_id,
+                vote.question_id,
+                vote.question_text,
+                vote.answer_text,
+                vote.is_correct,
+                vote.timestamp
+            ])
+
+        return output.getvalue()
+
+    @staticmethod
+    async def export_quiz_results_from_redis_to_json(uow: IUnitOfWork, current_user_id: int, user_id: int,
+                                                     company_id: int, quiz_id: int) -> str:
+        quiz_votes = await QuizResultService.get_quiz_votes_from_redis(uow, current_user_id, user_id, company_id,
+                                                                       quiz_id)
+        return json.dumps([vote.dict() for vote in quiz_votes])
