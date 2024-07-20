@@ -1,7 +1,7 @@
+from pydantic import BaseModel, Field
 from datetime import datetime
-from typing import Dict
-
-from pydantic import BaseModel
+from typing import Optional, Dict
+import time
 
 
 class QuizResultCreate(BaseModel):
@@ -26,10 +26,12 @@ class QuizVoteRequest(BaseModel):
     answers: Dict[int, int]
 
 
-class QuizVoteCreate(BaseModel):
+class UserQuizVote(BaseModel):
     user_id: int
     company_id: int
     quiz_id: int
     question_id: int
-    answer: str
+    question_text: str
+    answer_text: str
     is_correct: bool
+    timestamp: Optional[float] = Field(default_factory=lambda: time.time())

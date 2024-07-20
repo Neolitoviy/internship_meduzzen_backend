@@ -1,9 +1,7 @@
-import json
+from typing import List
 from fastapi import APIRouter
-
-from app.db.redis_client import get_redis_client
 from app.routers.dependencies import UOWDep, CurrentUserDep, QuizResultServiceDep
-from app.schemas.quiz_result import QuizResultResponse, QuizVoteRequest
+from app.schemas.quiz_result import QuizResultResponse, QuizVoteRequest, UserQuizVote
 
 router = APIRouter(
     prefix="/quiz_result",
@@ -20,10 +18,12 @@ async def quiz_vote(company_id: int, quiz_id: int, vote_data: QuizVoteRequest, u
 @router.get("/quiz_results/average_score/user/{user_id}", response_model=float)
 async def get_user_average_score(
         user_id: int,
+        company_id: int,
+        current_user: CurrentUserDep,
         uow: UOWDep,
         quiz_result_service: QuizResultServiceDep
 ):
-    return await quiz_result_service.get_user_average_score(uow, user_id)
+    return await quiz_result_service.get_user_average_score(uow, user_id, company_id, current_user.id)
 
 
 @router.get("/quiz_results/average_score/company/{company_id}", response_model=float)
@@ -37,10 +37,25 @@ async def get_company_average_score(
 
 
 @router.get("/get_vote_redis")
-async def get_vote_redis(user_id: int, company_id: int, quiz_id: int, question_id: int):
-    client = await get_redis_client()
-    key = f"quiz_vote:{user_id}:{company_id}:{quiz_id}:{question_id}"
-    data = await client.get(key)
-    if data:
-        return json.loads(data)
-    return {"status": "not found"}
+async def get_vote_redis(
+        user_id: int,
+        company_id: int,
+        quiz_id: int,
+        question_id: int,
+        current_user: CurrentUserDep,
+        uow: UOWDep,
+        quiz_result_service: QuizResultServiceDep
+):
+    return await quiz_result_service.get_vote_redis(uow, current_user.id, user_id, company_id, quiz_id, question_id)
+
+
+@router.get("/get_quiz_votes_redis", response_model=List[UserQuizVote])
+async def get_quiz_votes_redis(
+        user_id: int,
+        company_id: int,
+        quiz_id: int,
+        current_user: CurrentUserDep,
+        uow: UOWDep,
+        quiz_result_service: QuizResultServiceDep
+):
+    return await quiz_result_service.get_quiz_votes_from_redis(uow, current_user.id, user_id, company_id, quiz_id)
