@@ -6,6 +6,8 @@ from app.core.exceptions import QuestionNotFound, PermissionDenied, QuizNotFound
 
 
 class QuestionService:
+    MIN_QUESTIONS = 2
+
     @staticmethod
     async def create_question(uow: IUnitOfWork, quiz_id: int, question_data: QuestionSchemaCreate,
                               current_user_id: int) -> QuestionSchemaResponse:
@@ -57,7 +59,9 @@ class QuestionService:
             if company.owner_id != current_user_id and not await uow.company_members.find_one(
                     company_id=quiz.company_id, user_id=current_user_id, is_admin=True):
                 raise PermissionDenied("You do not have permission to delete this question")
-
+            total_questions = await uow.questions.count_all(quiz_id=quiz.id)
+            if total_questions <= QuestionService.MIN_QUESTIONS:
+                raise PermissionDenied(f"A quiz must have at least {QuestionService.MIN_QUESTIONS} questions.")
             await uow.questions.delete_one(question_id)
 
     @staticmethod

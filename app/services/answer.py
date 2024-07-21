@@ -5,6 +5,8 @@ from app.core.exceptions import AnswerNotFound, PermissionDenied, QuestionNotFou
 
 
 class AnswerService:
+    MIN_ANSWERS = 2
+
     @staticmethod
     async def create_answer(uow: IUnitOfWork, question_id: int, answer_data: AnswerSchemaCreate,
                             current_user_id: int) -> AnswerSchemaResponse:
@@ -52,6 +54,9 @@ class AnswerService:
             if company.owner_id != current_user_id and not await uow.company_members.find_one(
                     company_id=quiz.company_id, user_id=current_user_id, is_admin=True):
                 raise PermissionDenied("You do not have permission to delete this answer")
+            total_answers = await uow.answers.count_all(question_id=question.id)
+            if total_answers <= AnswerService.MIN_ANSWERS:
+                raise PermissionDenied(f"A question must have at least {AnswerService.MIN_ANSWERS} answers.")
             await uow.answers.delete_one(answer_id)
 
     @staticmethod
