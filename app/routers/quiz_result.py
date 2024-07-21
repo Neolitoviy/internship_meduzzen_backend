@@ -72,8 +72,8 @@ async def export_quiz_results_to_csv(
         quiz_result_service: QuizResultServiceDep
 ):
     csv_data = await quiz_result_service.export_quiz_results_from_redis_to_csv(uow, current_user.id, user_id,
-                                                                                 company_id,
-                                                                                 quiz_id)
+                                                                               company_id,
+                                                                               quiz_id)
     response = Response(content=csv_data, media_type="text/csv")
     response.headers["Content-Disposition"] = f"attachment; filename=quiz_results_{company_id}_{quiz_id}.csv"
     return response

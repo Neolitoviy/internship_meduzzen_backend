@@ -1,7 +1,7 @@
 import csv
 import json
 from io import StringIO
-from typing import List
+from typing import List, Dict, Any
 from app.db.redis_db import get_redis_client
 from app.schemas.quiz_result import QuizResultResponse, QuizVoteRequest, UserQuizVote
 from app.utils.unitofwork import IUnitOfWork
@@ -164,3 +164,102 @@ class QuizResultService:
         quiz_votes = await QuizResultService.get_quiz_votes_from_redis(uow, current_user_id, user_id, company_id,
                                                                        quiz_id)
         return json.dumps([vote.dict() for vote in quiz_votes])
+
+    # Pishla Analitica
+
+    @staticmethod
+    async def get_user_overall_rating(uow: IUnitOfWork, user_id: int) -> float:
+        async with uow:
+            return await uow.quiz_results.get_average_score(user_id=user_id)
+
+    @staticmethod
+    async def get_user_quiz_scores(uow: IUnitOfWork, user_id: int) -> List[Dict[str, Any]]:
+        async with uow:
+            results = await uow.quiz_results.find_all(user_id=user_id, skip=0, limit=100)
+            quiz_scores = {}
+            for result in results:
+                quiz_id = result.quiz_id
+                if quiz_id not in quiz_scores:
+                    quiz_scores[quiz_id] = {
+                        'quiz_id': quiz_id,
+                        'scores': [],
+                        'timestamps': []
+                    }
+                quiz_scores[quiz_id]['scores'].append(result.score)
+                quiz_scores[quiz_id]['timestamps'].append(result.created_at)
+            return list(quiz_scores.values())
+
+    @staticmethod
+    async def get_user_last_quiz_attempts(uow: IUnitOfWork, user_id: int) -> List[Dict[str, Any]]:
+        async with uow:
+            results = await uow.quiz_results.find_all(user_id=user_id, skip=0, limit=100)
+            last_attempts = {}
+            for result in results:
+                quiz_id = result.quiz_id
+                if quiz_id not in last_attempts or result.created_at > last_attempts[quiz_id]['timestamp']:
+                    last_attempts[quiz_id] = {
+                        'quiz_id': quiz_id,
+                        'timestamp': result.created_at
+                    }
+            return list(last_attempts.values())
+
+    @staticmethod
+    async def get_company_member_average_scores(uow: IUnitOfWork, company_id: int, requesting_user_id: int) -> List[
+        Dict[str, Any]]:
+        async with uow:
+            company = await uow.companies.find_one(id=company_id)
+            if company.owner_id != requesting_user_id and not await uow.company_members.find_one(company_id=company_id,
+                                                                                                 user_id=requesting_user_id,
+                                                                                                 is_admin=True):
+                raise PermissionDenied("You do not have permission to view this company's member scores.")
+            members = await uow.company_members.find_all(company_id=company_id, skip=0, limit=100)
+            member_scores = []
+            for member in members:
+                average_score = await uow.quiz_results.get_average_score(user_id=member.user_id)
+                member_scores.append({
+                    'user_id': member.user_id,
+                    'average_score': average_score
+                })
+            return member_scores
+
+    @staticmethod
+    async def get_user_quiz_scores_with_trends(uow: IUnitOfWork, user_id: int, company_id: int,
+                                               requesting_user_id: int) -> List[Dict[str, Any]]:
+        async with uow:
+            company = await uow.companies.find_one(id=company_id)
+            if company.owner_id != requesting_user_id and not await uow.company_members.find_one(company_id=company_id,
+                                                                                                 user_id=requesting_user_id,
+                                                                                                 is_admin=True):
+                raise PermissionDenied("You do not have permission to view this user's quiz scores.")
+            results = await uow.quiz_results.find_all(user_id=user_id, company_id=company_id, skip=0, limit=100)
+            quiz_scores = {}
+            for result in results:
+                quiz_id = result.quiz_id
+                if quiz_id not in quiz_scores:
+                    quiz_scores[quiz_id] = {
+                        'quiz_id': quiz_id,
+                        'scores': [],
+                        'timestamps': []
+                    }
+                quiz_scores[quiz_id]['scores'].append(result.score)
+                quiz_scores[quiz_id]['timestamps'].append(result.created_at)
+            return list(quiz_scores.values())
+
+    @staticmethod
+    async def get_company_user_last_attempts(uow: IUnitOfWork, company_id: int, requesting_user_id: int) -> List[
+        Dict[str, Any]]:
+        async with uow:
+            company = await uow.companies.find_one(id=company_id)
+            if company.owner_id != requesting_user_id and not await uow.company_members.find_one(company_id=company_id,
+                                                                                                 user_id=requesting_user_id,
+                                                                                                 is_admin=True):
+                raise PermissionDenied("You do not have permission to view this company's user attempts.")
+            members = await uow.company_members.find_all(company_id=company_id, skip=0, limit=100)
+            user_last_attempts = []
+            for member in members:
+                last_attempt = await uow.quiz_results.find_last_attempt(user_id=member.user_id)
+                user_last_attempts.append({
+                    'user_id': member.user_id,
+                    'last_attempt': last_attempt.created_at if last_attempt else None
+                })
+            return user_last_attempts
