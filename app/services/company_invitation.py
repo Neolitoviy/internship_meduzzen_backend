@@ -12,6 +12,8 @@ class CompanyInvitationService:
         async with uow:
             company = await uow.companies.find_one(id=invitation.company_id)
             if company and company.owner_id == current_user_id:
+                if invitation.invited_user_id == current_user_id:
+                    raise CompanyPermissionError("You cannot send an invitation to yourself.")
                 new_invitation = await uow.company_invitations.add_one(invitation.model_dump())
                 return CompanyInvitationResponse.model_validate(new_invitation)
         raise CompanyPermissionError("You don't have permission to invite users to this company")
@@ -31,8 +33,8 @@ class CompanyInvitationService:
     @staticmethod
     async def accept_invitation(uow: IUnitOfWork, invitation_id: int, current_user_id: int) -> None:
         async with uow:
-            invitation = await uow.company_invitations.find_one(id=invitation_id)
-            if not invitation or invitation.invited_user_id != current_user_id:
+            invitation = await uow.company_invitations.find_one(id=invitation_id, invited_user_id=current_user_id)
+            if not invitation:
                 raise CompanyPermissionError("You don't have permission to accept this invitation")
 
             if await uow.company_members.find_one(company_id=invitation.company_id, user_id=current_user_id):
