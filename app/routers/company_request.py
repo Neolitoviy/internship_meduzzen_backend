@@ -1,5 +1,4 @@
-from fastapi import APIRouter, Request
-from app.schemas.company_request import CompanyRequestCreate, CompanyRequestResponse, CompanyRequestListResponse
+from fastapi import APIRouter
 from app.routers.dependencies import UOWDep, CurrentUserDep, CompanyRequestServiceDep
 
 router = APIRouter(
