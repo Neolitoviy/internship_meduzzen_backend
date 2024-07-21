@@ -37,10 +37,8 @@ class UserCreate(UserBase):
     hashed_password: Optional[str] = None
 
     @model_validator(mode='before')
-    @classmethod
-    def hash_password(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    def hash_password(cls, values: Any) -> Any:
         values_dict = values.model_dump(exclude_unset=True)
-
         if 'password1' in values_dict and values_dict['password1']:
             hashed_password = Hasher.get_password_hash(values_dict['password1'])
             values_dict['hashed_password'] = hashed_password
@@ -62,8 +60,7 @@ class UserUpdate(UserUpdateInput):
     hashed_password: Optional[str] = None
 
     @model_validator(mode='before')
-    @classmethod
-    def hash_password(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    def hash_password(cls, values: Any) -> Any:
         values_dict = values.model_dump(exclude_unset=True)
         if 'password' in values_dict and values_dict['password'] is not None:
             hashed_password = Hasher.get_password_hash(values_dict['password'])
