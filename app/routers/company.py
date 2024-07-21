@@ -1,14 +1,18 @@
 from fastapi import APIRouter, Request
-from app.routers.dependencies import UOWDep, CurrentUserDep, CompanyServiceDep
+from app.routers.dependencies import UOWDep, CurrentUserDep, CompanyServiceDep, CompanyRequestServiceDep, \
+    CompanyInvitationServiceDep, CompanyMemberServiceDep
 from app.schemas.company import CompanyCreate, CompanyUpdate, CompanyResponse, CompanyListResponse
+from app.schemas.company_invitation import CompanyInvitationResponse, CompanyInvitationCreate
+from app.schemas.company_member import CompanyMemberListResponse
+from app.schemas.company_request import CompanyRequestCreate, CompanyRequestResponse
 import logging
 from app.core.logging_config import logging_config
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(
-    prefix="/companies",
-    tags=["Companies"],
+    prefix="/company",
+    tags=["Company"],
 )
 
 
@@ -39,3 +43,29 @@ async def update_company(company_id: int, company: CompanyUpdate, uow: UOWDep, c
 async def delete_company(company_id: int, uow: UOWDep, current_user: CurrentUserDep,
                          company_service: CompanyServiceDep):
     return await company_service.delete_company(uow, company_id, current_user.id)
+
+
+@router.post("/{company_id}/join", response_model=CompanyRequestResponse)
+async def request_to_join_company(company_id: int, uow: UOWDep, current_user: CurrentUserDep,
+                                  service: CompanyRequestServiceDep):
+    request = CompanyRequestCreate(company_id=company_id)
+    return await service.request_to_join_company(uow, request, current_user.id)
+
+
+@router.post("/{company_id}/invite/{user_id}", response_model=CompanyInvitationResponse)
+async def invite_user_to_company(company_id: int, user_id: int, uow: UOWDep, current_user: CurrentUserDep,
+                                 service: CompanyInvitationServiceDep):
+    invitation = CompanyInvitationCreate(company_id=company_id, invited_user_id=user_id)
+    return await service.send_invitation(uow, invitation, current_user.id)
+
+
+@router.post("/{company_id}/leave", status_code=204)
+async def leave_company(company_id: int, uow: UOWDep, current_user: CurrentUserDep, service: CompanyMemberServiceDep):
+    return await service.leave_company(uow, company_id, current_user.id)
+
+
+@router.get("/{company_id}/members", response_model=CompanyMemberListResponse)
+async def get_memberships_by_company_id(request: Request, uow: UOWDep, current_user: CurrentUserDep,
+                                        service: CompanyMemberServiceDep, company_id: int, skip: int = 0,
+                                        limit: int = 10):
+    return await service.get_memberships(uow, current_user.id, company_id, skip, limit, str(request.url))
