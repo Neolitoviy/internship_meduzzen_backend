@@ -13,17 +13,19 @@ class CompanyMemberService:
             if not member:
                 raise MemberNotFound("Member not found")
             company = await uow.companies.find_one(id=member.company_id)
-            if company.owner_id != current_user_id:
-                raise CompanyPermissionError("You don't have permission to remove this member")
-            await uow.company_members.delete_one(member_id)
+            if company and company.owner_id == current_user_id:
+                await uow.company_members.delete_one(member_id)
+                return
+        raise CompanyPermissionError("You don't have permission to remove this member")
 
     @staticmethod
     async def leave_company(uow: IUnitOfWork, company_id: int, current_user_id: int) -> None:
         async with uow:
             member = await uow.company_members.find_one(user_id=current_user_id, company_id=company_id)
-            if not member:
-                raise MemberNotFound("You are not a member of this company")
-            await uow.company_members.delete_one(member.id)
+            if member:
+                await uow.company_members.delete_one(member.id)
+                return
+        raise MemberNotFound("You are not a member of this company")
 
     @staticmethod
     async def get_memberships(
