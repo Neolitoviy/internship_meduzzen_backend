@@ -19,7 +19,7 @@ async def accept_invitation(invitation_id: int, uow: UOWDep, current_user: Curre
     return await service.accept_invitation(uow, invitation_id, current_user.id)
 
 
-@router.post("/{invitation_id}/deny", status_code=204)
+@router.post("/{invitation_id}/decline", status_code=204)
 async def decline_invitation(invitation_id: int, uow: UOWDep, current_user: CurrentUserDep,
                              service: CompanyInvitationServiceDep):
     return await service.decline_invitation(uow, invitation_id, current_user.id)
