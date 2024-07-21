@@ -11,11 +11,10 @@ class CompanyInvitationService:
                               current_user_id: int) -> CompanyInvitationResponse:
         async with uow:
             company = await uow.companies.find_one(id=invitation.company_id)
-            if not company or company.owner_id != current_user_id:
-                raise CompanyPermissionError("You don't have permission to invite users to this company")
-
-            new_invitation = await uow.company_invitations.add_one(invitation.model_dump())
-            return CompanyInvitationResponse.model_validate(new_invitation)
+            if company and company.owner_id == current_user_id:
+                new_invitation = await uow.company_invitations.add_one(invitation.model_dump())
+                return CompanyInvitationResponse.model_validate(new_invitation)
+        raise CompanyPermissionError("You don't have permission to invite users to this company")
 
     @staticmethod
     async def cancel_invitation(uow: IUnitOfWork, invitation_id: int, current_user_id: int) -> None:
@@ -23,11 +22,11 @@ class CompanyInvitationService:
             invitation = await uow.company_invitations.find_one(id=invitation_id)
             if not invitation:
                 raise InvitationNotFound(f"Invitation with id {invitation_id} not found")
-
             company = await uow.companies.find_one(id=invitation.company_id)
-            if not company or company.owner_id != current_user_id:
-                raise CompanyPermissionError("You don't have permission to cancel this invitation")
-            await uow.company_invitations.delete_one(invitation_id)
+            if company and company.owner_id == current_user_id:
+                await uow.company_invitations.delete_one(invitation_id)
+                return
+        raise CompanyPermissionError("You don't have permission to cancel this invitation")
 
     @staticmethod
     async def accept_invitation(uow: IUnitOfWork, invitation_id: int, current_user_id: int) -> None:
@@ -51,9 +50,10 @@ class CompanyInvitationService:
     async def decline_invitation(uow: IUnitOfWork, invitation_id: int, current_user_id: int) -> None:
         async with uow:
             invitation = await uow.company_invitations.find_one(id=invitation_id)
-            if not invitation or invitation.invited_user_id != current_user_id:
-                raise CompanyPermissionError("You don't have permission to decline this invitation")
-            invitation.status = 'declined'
+            if invitation and invitation.invited_user_id == current_user_id:
+                invitation.status = 'declined'
+                return
+        raise CompanyPermissionError("You don't have permission to decline this invitation")
 
     @staticmethod
     async def get_invitations(uow: IUnitOfWork, user_id: int, skip: int, limit: int,
