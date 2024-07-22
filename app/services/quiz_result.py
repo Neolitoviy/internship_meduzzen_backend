@@ -178,10 +178,12 @@ class QuizResultService:
             results = await uow.quiz_results.find_all(user_id=user_id, skip=0, limit=100)
             quiz_scores = {}
             for result in results:
+                quiz = await uow.quizzes.find_one(id=result.quiz_id)
                 quiz_id = result.quiz_id
                 if quiz_id not in quiz_scores:
                     quiz_scores[quiz_id] = {
                         'quiz_id': quiz_id,
+                        "quiz_title": quiz.title,
                         'scores': [],
                         'timestamps': []
                     }
