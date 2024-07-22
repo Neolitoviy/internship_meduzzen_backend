@@ -61,8 +61,8 @@ class CompanyInvitationService:
     async def get_invitations(uow: IUnitOfWork, user_id: int, skip: int, limit: int,
                               request_url: str) -> CompanyInvitationListResponse:
         async with uow:
-            total_invitations = await uow.company_requests.count_all(user_id=user_id)
-            invitations = await uow.company_requests.find_all(user_id=user_id, skip=skip, limit=limit)
+            total_invitations = await uow.company_invitations.count_all(user_id=user_id)
+            invitations = await uow.company_invitations.find_all(user_id=user_id, skip=skip, limit=limit)
             total_pages = (total_invitations + limit - 1) // limit
             current_page = (skip // limit) + 1
 
