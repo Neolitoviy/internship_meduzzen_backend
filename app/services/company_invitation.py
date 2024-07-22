@@ -35,7 +35,7 @@ class CompanyInvitationService:
         async with uow:
             invitation = await uow.company_invitations.find_one(id=invitation_id, invited_user_id=current_user_id)
             if not invitation:
-                raise CompanyPermissionError("You don't have permission to accept this invitation")
+                raise InvitationNotFound("Invitation Not Found")
 
             if await uow.company_members.find_one(company_id=invitation.company_id, user_id=current_user_id):
                 raise CompanyPermissionError("You are already a member of this company")

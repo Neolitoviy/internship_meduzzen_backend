@@ -11,6 +11,9 @@ class CompanyRequestService:
         request_dict = request.model_dump()
         request_dict['requested_user_id'] = current_user_id
         async with uow:
+            company = await uow.companies.find_one(id=request.company_id)
+            if company.owner_id == current_user_id:
+                raise CompanyPermissionError("You cannot request to join your own company.")
             new_request = await uow.company_requests.add_one(request_dict)
             return CompanyRequestResponse.model_validate(new_request)
 
@@ -33,7 +36,8 @@ class CompanyRequestService:
             if company and company.owner_id == current_user_id:
                 if await uow.company_members.find_one(company_id=request.company_id, user_id=request.requested_user_id):
                     raise CompanyPermissionError("This user is already a member of the company")
-                await uow.company_members.add_one({"user_id": request.requested_user_id, "company_id": request.company_id})
+                await uow.company_members.add_one(
+                    {"user_id": request.requested_user_id, "company_id": request.company_id})
                 request.status = 'accepted'
                 return
         raise CompanyPermissionError("You don't have permission to accept this request")
