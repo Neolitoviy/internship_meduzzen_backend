@@ -67,4 +67,4 @@ class CompanyService:
         async with uow:
             company = await uow.companies.find_one(id=company_id)
             if not company or company.owner_id != current_user_id:
-                raise CompanyPermissionError(f"You don't have permission to modify this company")
+                raise CompanyPermissionError("You don't have permission to modify this company")

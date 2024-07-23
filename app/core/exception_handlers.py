@@ -2,7 +2,8 @@ from fastapi import Request, FastAPI
 from fastapi.responses import JSONResponse
 from starlette import status
 from app.core.exceptions import UserNotFound, UserAlreadyExists, EmailAlreadyExists, CompanyNotFound, \
-    CompanyPermissionError, InvalidCredentials, PermissionDenied, BadRequest
+    CompanyPermissionError, InvitationNotFound, MemberNotFound, RequestNotFound, InvalidCredentials, PermissionDenied, \
+    BadRequest
 
 
 def register_exception_handlers(app: FastAPI):
@@ -34,6 +35,24 @@ def register_exception_handlers(app: FastAPI):
     async def company_permission_error_exception_handler(request: Request, exc: CompanyPermissionError):
         return JSONResponse(
             status_code=status.HTTP_403_FORBIDDEN, content={"detail": str(exc)}
+        )
+
+    @app.exception_handler(InvitationNotFound)
+    async def invitation_not_found_exception_handler(request: Request, exc: InvitationNotFound):
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND, content={"detail": str(exc)}
+        )
+
+    @app.exception_handler(MemberNotFound)
+    async def member_not_found_exception_handler(request: Request, exc: MemberNotFound):
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND, content={"detail": str(exc)}
+        )
+
+    @app.exception_handler(RequestNotFound)
+    async def request_not_found_exception_handler(request: Request, exc: RequestNotFound):
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND, content={"detail": str(exc)}
         )
 
     @app.exception_handler(InvalidCredentials)
