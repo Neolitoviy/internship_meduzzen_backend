@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     auth0_algorithms: str
     owner: str
 
+    celery_broker_url: str
+
     model_config = SettingsConfigDict(env_file=".env", extra="allow")
 
     @property
