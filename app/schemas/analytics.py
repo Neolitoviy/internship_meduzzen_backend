@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel
 
 
@@ -32,4 +32,4 @@ class QuizTrend(BaseModel):
 
 class CompanyUserLastAttempt(BaseModel):
     user_id: int
-    last_attempt: datetime
+    last_attempt: Optional[datetime]

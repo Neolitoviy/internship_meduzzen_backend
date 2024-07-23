@@ -45,31 +45,37 @@ async def get_user_company_average_score(
 async def get_user_quiz_scores(
         current_user: CurrentUserDep,
         uow: UOWDep,
-        service: QuizResultServiceDep
+        service: QuizResultServiceDep,
+        skip: int = 0,
+        limit: int = 10
 ):
-    return await service.get_user_quiz_scores(uow, current_user.id)
+    return await service.get_user_quiz_scores(uow, current_user.id, skip, limit)
 
 
 @router.get("/user/last_quiz_attempts", response_model=List[LastQuizAttempt])
 async def get_user_last_quiz_attempts(
         current_user: CurrentUserDep,
         uow: UOWDep,
-        service: QuizResultServiceDep
+        service: QuizResultServiceDep,
+        skip: int = 0,
+        limit: int = 10
 ):
-    return await service.get_user_last_quiz_attempts(uow, current_user.id)
+    return await service.get_user_last_quiz_attempts(uow, current_user.id, skip, limit)
 
 
 @router.get("/company/{company_id}/member_average_scores", response_model=List[CompanyMemberAverageScore])
-async def get_company_member_average_scores(
+async def get_company_members_average_scores(
         company_id: int,
         start_date: datetime,
         end_date: datetime,
         current_user: CurrentUserDep,
         uow: UOWDep,
-        service: QuizResultServiceDep
+        service: QuizResultServiceDep,
+        skip: int = 0,
+        limit: int = 10
 ):
     return await service.get_company_members_average_scores_over_time(uow, company_id, start_date, end_date,
-                                                                      current_user.id)
+                                                                      current_user.id, skip, limit)
 
 
 @router.get("/company/{company_id}/user/{user_id}/quiz_trends", response_model=List[QuizTrend])
@@ -90,9 +96,11 @@ async def get_company_user_last_attempts(
         company_id: int,
         current_user: CurrentUserDep,
         uow: UOWDep,
-        service: QuizResultServiceDep
+        service: QuizResultServiceDep,
+        skip: int = 0,
+        limit: int = 10
 ):
-    return await service.get_company_user_last_attempts(uow, company_id, current_user.id)
+    return await service.get_company_user_last_attempts(uow, company_id, current_user.id, skip, limit)
 
 
 @router.get("/get_vote_redis")
