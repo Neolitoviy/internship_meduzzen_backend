@@ -14,7 +14,6 @@ from app.routers.question import router as question_router
 from app.routers.answer import router as answer_router
 from app.routers.me import router as me_router
 from app.routers.quiz_result import router as quiz_result_router
-from app.routers.analytics import router as analytics_router
 from app.core.logging_config import logging_config
 import logging
 
@@ -56,7 +55,6 @@ app.include_router(quiz_router)
 app.include_router(question_router)
 app.include_router(answer_router)
 app.include_router(quiz_result_router)
-app.include_router(analytics_router)
 app.include_router(health_router)
 
 if __name__ == "__main__":

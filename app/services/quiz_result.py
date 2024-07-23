@@ -3,6 +3,8 @@ import json
 from io import StringIO
 from typing import List, Dict, Any
 from app.db.redis_db import get_redis_client
+from app.schemas.analytics import CompanyUserLastAttempt, QuizTrend, CompanyMemberAverageScore, LastQuizAttempt, \
+    QuizScore
 from app.schemas.quiz_result import QuizResultResponse, QuizVoteRequest, UserQuizVote
 from app.utils.unitofwork import IUnitOfWork
 from app.core.exceptions import QuizNotFound, PermissionDenied, QuestionNotFound, AnswerNotFound, CompanyNotFound
@@ -63,7 +65,9 @@ class QuizResultService:
             })
             return QuizResultResponse.model_validate(quiz_result)
 
-    @staticmethod
+    # Pishla Analitica
+
+    @staticmethod  # Already done BE 15 1 1 in previous tasks
     async def get_user_average_score(uow: IUnitOfWork, user_id: int, company_id: int, current_user_id: int) -> float:
         async with uow:
             company = await uow.companies.find_one(id=company_id)
@@ -73,13 +77,129 @@ class QuizResultService:
             return await uow.quiz_results.get_average_score(user_id=user_id)
 
     @staticmethod
-    async def get_company_average_score(uow: IUnitOfWork, company_id: int, current_user_id: int) -> float:
+    async def get_company_average_score(uow: IUnitOfWork, user_id: int, company_id: int, current_user_id: int) -> float:
         async with uow:
             company = await uow.companies.find_one(id=company_id)
             if company.owner_id != current_user_id and not await uow.company_members.find_one(company_id=company_id,
                                                                                               user_id=current_user_id):
                 raise PermissionDenied("You do not have permission to view this company's average score.")
-            return await uow.quiz_results.get_average_score(company_id=company_id)
+            return await uow.quiz_results.get_average_score(user_id=user_id, company_id=company_id)
+
+    @staticmethod  # BE 15 1 2
+    async def get_user_quiz_scores(uow: IUnitOfWork, user_id: int) -> List[QuizScore]:
+        async with uow:
+            results = await uow.quiz_results.find_all(user_id=user_id, skip=0, limit=100)
+            quiz_scores = {}
+            for result in results:
+                quiz = await uow.quizzes.find_one(id=result.quiz_id)
+                quiz_id = result.quiz_id
+                if quiz_id not in quiz_scores:  # Each means unique quiz_id
+                    quiz_scores[quiz_id] = {
+                        'quiz_id': quiz_id,
+                        "quiz_title": quiz.title,
+                        'scores': [],
+                        'timestamps': []
+                    }
+                quiz_scores[quiz_id]['scores'].append(result.score)  # List of average score for Each quiz
+                quiz_scores[quiz_id]['timestamps'].append(result.created_at)  # Time ranges
+            return [QuizScore.model_validate(data) for data in quiz_scores.values()]
+
+    @staticmethod  # BE 15 1 3
+    async def get_user_last_quiz_attempts(uow: IUnitOfWork, user_id: int) -> List[LastQuizAttempt]:
+        async with uow:
+            results = await uow.quiz_results.find_all(user_id=user_id, skip=0, limit=100)
+            last_attempts = {}
+            for result in results:
+                quiz_id = result.quiz_id
+                if quiz_id not in last_attempts or result.created_at > last_attempts[quiz_id]['timestamp']:
+                    last_attempts[quiz_id] = {
+                        'quiz_id': quiz_id,
+                        'timestamp': result.created_at
+                    }
+            return [LastQuizAttempt.model_validate(data) for data in last_attempts.values()]
+
+    @staticmethod  # BE 15 2 1
+    async def get_company_members_average_scores_over_time(uow: IUnitOfWork, company_id: int, start_date: datetime,
+                                                           end_date: datetime, current_user_id: int) -> List[
+        CompanyMemberAverageScore]:
+        async with uow:
+            company = await uow.companies.find_one(id=company_id)
+            if company.owner_id != current_user_id and not await uow.company_members.find_one(
+                    company_id=company_id, user_id=current_user_id, is_admin=True):
+                raise PermissionDenied("You do not have permission to view this company's average scores.")
+
+            members = await uow.company_members.find_all(company_id=company_id, skip=0, limit=100)
+            member_scores = []
+            for member in members:
+                average_score = await uow.quiz_results.get_average_score_by_date_range(member.user_id, start_date,
+                                                                                       end_date)
+                member_scores.append({
+                    "user_id": member.user_id,
+                    "average_score": average_score,
+                    "start_date": start_date,
+                    "end_date": end_date
+                })
+
+            return [CompanyMemberAverageScore.model_validate(data) for data in member_scores]
+
+    @staticmethod  # BE 15 2 2
+    async def get_user_quiz_trends(uow: IUnitOfWork, company_id: int, user_id: int, start_date: datetime,
+                                   end_date: datetime, current_user_id: int) -> List[QuizTrend]:
+        async with uow:
+            company = await uow.companies.find_one(id=company_id)
+            if company.owner_id != current_user_id and not await uow.company_members.find_one(
+                    company_id=company_id, user_id=current_user_id, is_admin=True):
+                raise PermissionDenied("You do not have permission to view this user's quiz trends.")
+
+            results = await uow.quiz_results.find_all_by_date_range(user_id, start_date, end_date)
+            quiz_trends = {}
+            for result in results:
+                quiz_id = result.quiz_id
+                if quiz_id not in quiz_trends:
+                    quiz = await uow.quizzes.find_one(id=quiz_id)
+                    quiz_trends[quiz_id] = {
+                        "quiz_id": quiz_id,
+                        "quiz_title": quiz.title,
+                        "total_score": 0,
+                        "count": 0,
+                        "start_date": result.created_at,
+                        "end_date": result.created_at
+                    }
+                quiz_trends[quiz_id]["total_score"] += result.score
+                quiz_trends[quiz_id]["count"] += 1
+                quiz_trends[quiz_id]['start_date'] = min(quiz_trends[quiz_id]['start_date'], result.created_at)
+                quiz_trends[quiz_id]['end_date'] = max(quiz_trends[quiz_id]['end_date'], result.created_at)
+
+            quiz_trends_with_averages = []
+            for quiz_id, data in quiz_trends.items():
+                average_score = data["total_score"] / data["count"]
+                quiz_trends_with_averages.append({
+                    "quiz_id": quiz_id,
+                    "quiz_title": data["quiz_title"],
+                    "average_score": round(average_score, 2),
+                    "start_date": data['start_date'],
+                    "end_date": data['end_date']
+                })
+
+            return [QuizTrend.model_validate(data) for data in quiz_trends_with_averages]
+
+    @staticmethod  # BE 15 2 3
+    async def get_company_user_last_attempts(uow: IUnitOfWork, company_id: int, requesting_user_id: int) -> List[
+        CompanyUserLastAttempt]:
+        async with uow:
+            company = await uow.companies.find_one(id=company_id)
+            if company.owner_id != requesting_user_id and not await uow.company_members.find_one(
+                    company_id=company_id, user_id=requesting_user_id, is_admin=True):
+                raise PermissionDenied("You do not have permission to view this company's user attempts.")
+            members = await uow.company_members.find_all(company_id=company_id, skip=0, limit=100)
+            user_last_attempts = []
+            for member in members:
+                last_attempt = await uow.quiz_results.find_last_attempt(user_id=member.user_id)
+                user_last_attempts.append({
+                    'user_id': member.user_id,
+                    'last_attempt': last_attempt.created_at if last_attempt else None
+                })
+            return [CompanyUserLastAttempt.model_validate(data) for data in user_last_attempts]
 
     @staticmethod
     async def save_quiz_vote_to_redis(vote: UserQuizVote) -> None:
@@ -96,9 +216,8 @@ class QuizResultService:
             if not company:
                 raise QuizNotFound("Company not found")
             if user_id != current_user_id:
-                if company.owner_id != current_user_id and not await uow.company_members.find_one(company_id=company_id,
-                                                                                                  user_id=current_user_id,
-                                                                                                  is_admin=True):
+                if company.owner_id != current_user_id and not await uow.company_members.find_one(
+                        company_id=company_id, user_id=current_user_id, is_admin=True):
                     raise PermissionDenied("You do not have permission to view this company's quiz votes.")
         connection = await get_redis_client()
         user_key_pattern = f"quiz_vote:{user_id}:{company_id}:{quiz_id}:*"
@@ -122,9 +241,8 @@ class QuizResultService:
             if not company:
                 raise CompanyNotFound("Company not found")
             if user_id != current_user_id:
-                if company.owner_id != current_user_id and not await uow.company_members.find_one(company_id=company_id,
-                                                                                                  user_id=current_user_id,
-                                                                                                  is_admin=True):
+                if company.owner_id != current_user_id and not await uow.company_members.find_one(
+                        company_id=company_id, user_id=current_user_id, is_admin=True):
                     raise PermissionDenied("You do not have permission to view this company's quiz votes.")
         connection = await get_redis_client()
         key = f"quiz_vote:{user_id}:{company_id}:{quiz_id}:{question_id}"
@@ -164,104 +282,3 @@ class QuizResultService:
         quiz_votes = await QuizResultService.get_quiz_votes_from_redis(uow, current_user_id, user_id, company_id,
                                                                        quiz_id)
         return json.dumps([vote.dict() for vote in quiz_votes])
-
-    # Pishla Analitica
-
-    @staticmethod
-    async def get_user_overall_rating(uow: IUnitOfWork, user_id: int) -> float:
-        async with uow:
-            return await uow.quiz_results.get_average_score(user_id=user_id)
-
-    @staticmethod
-    async def get_user_quiz_scores(uow: IUnitOfWork, user_id: int) -> List[Dict[str, Any]]:
-        async with uow:
-            results = await uow.quiz_results.find_all(user_id=user_id, skip=0, limit=100)
-            quiz_scores = {}
-            for result in results:
-                quiz = await uow.quizzes.find_one(id=result.quiz_id)
-                quiz_id = result.quiz_id
-                if quiz_id not in quiz_scores:
-                    quiz_scores[quiz_id] = {
-                        'quiz_id': quiz_id,
-                        "quiz_title": quiz.title,
-                        'scores': [],
-                        'timestamps': []
-                    }
-                quiz_scores[quiz_id]['scores'].append(result.score)
-                quiz_scores[quiz_id]['timestamps'].append(result.created_at)
-            return list(quiz_scores.values())
-
-    @staticmethod
-    async def get_user_last_quiz_attempts(uow: IUnitOfWork, user_id: int) -> List[Dict[str, Any]]:
-        async with uow:
-            results = await uow.quiz_results.find_all(user_id=user_id, skip=0, limit=100)
-            last_attempts = {}
-            for result in results:
-                quiz_id = result.quiz_id
-                if quiz_id not in last_attempts or result.created_at > last_attempts[quiz_id]['timestamp']:
-                    last_attempts[quiz_id] = {
-                        'quiz_id': quiz_id,
-                        'timestamp': result.created_at
-                    }
-            return list(last_attempts.values())
-
-    @staticmethod
-    async def get_company_member_average_scores(uow: IUnitOfWork, company_id: int, requesting_user_id: int) -> List[
-        Dict[str, Any]]:
-        async with uow:
-            company = await uow.companies.find_one(id=company_id)
-            if company.owner_id != requesting_user_id and not await uow.company_members.find_one(company_id=company_id,
-                                                                                                 user_id=requesting_user_id,
-                                                                                                 is_admin=True):
-                raise PermissionDenied("You do not have permission to view this company's member scores.")
-            members = await uow.company_members.find_all(company_id=company_id, skip=0, limit=100)
-            member_scores = []
-            for member in members:
-                average_score = await uow.quiz_results.get_average_score(user_id=member.user_id)
-                member_scores.append({
-                    'user_id': member.user_id,
-                    'average_score': average_score
-                })
-            return member_scores
-
-    @staticmethod
-    async def get_user_quiz_scores_with_trends(uow: IUnitOfWork, user_id: int, company_id: int,
-                                               requesting_user_id: int) -> List[Dict[str, Any]]:
-        async with uow:
-            company = await uow.companies.find_one(id=company_id)
-            if company.owner_id != requesting_user_id and not await uow.company_members.find_one(company_id=company_id,
-                                                                                                 user_id=requesting_user_id,
-                                                                                                 is_admin=True):
-                raise PermissionDenied("You do not have permission to view this user's quiz scores.")
-            results = await uow.quiz_results.find_all(user_id=user_id, company_id=company_id, skip=0, limit=100)
-            quiz_scores = {}
-            for result in results:
-                quiz_id = result.quiz_id
-                if quiz_id not in quiz_scores:
-                    quiz_scores[quiz_id] = {
-                        'quiz_id': quiz_id,
-                        'scores': [],
-                        'timestamps': []
-                    }
-                quiz_scores[quiz_id]['scores'].append(result.score)
-                quiz_scores[quiz_id]['timestamps'].append(result.created_at)
-            return list(quiz_scores.values())
-
-    @staticmethod
-    async def get_company_user_last_attempts(uow: IUnitOfWork, company_id: int, requesting_user_id: int) -> List[
-        Dict[str, Any]]:
-        async with uow:
-            company = await uow.companies.find_one(id=company_id)
-            if company.owner_id != requesting_user_id and not await uow.company_members.find_one(company_id=company_id,
-                                                                                                 user_id=requesting_user_id,
-                                                                                                 is_admin=True):
-                raise PermissionDenied("You do not have permission to view this company's user attempts.")
-            members = await uow.company_members.find_all(company_id=company_id, skip=0, limit=100)
-            user_last_attempts = []
-            for member in members:
-                last_attempt = await uow.quiz_results.find_last_attempt(user_id=member.user_id)
-                user_last_attempts.append({
-                    'user_id': member.user_id,
-                    'last_attempt': last_attempt.created_at if last_attempt else None
-                })
-            return user_last_attempts
