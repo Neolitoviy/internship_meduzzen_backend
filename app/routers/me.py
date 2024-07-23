@@ -1,3 +1,5 @@
+from typing import List
+
 from fastapi import APIRouter, Request, Depends
 from fastapi.security import HTTPBearer
 
@@ -6,7 +8,8 @@ from app.schemas.auth import SignInRequest
 from app.schemas.company_request import CompanyRequestListResponse
 from app.schemas.company_invitation import CompanyInvitationListResponse
 from app.routers.dependencies import UOWDep, CurrentUserDep, CompanyRequestServiceDep, CompanyInvitationServiceDep, \
-    UserServiceDep
+    UserServiceDep, NotificationServiceDep
+from app.schemas.notification import NotificationResponse
 from app.schemas.token import Token
 from app.schemas.user import UserResponse
 from app.services.auth import authenticate_and_get_user
@@ -45,3 +48,24 @@ async def get_invitations(
         skip: int = 0, limit: int = 10
 ):
     return await service.get_invitations(uow, current_user.id, skip, limit, str(request.url))
+
+
+@router.get("/notifications", response_model=List[NotificationResponse])
+async def get_all_my_notifications(
+        uow: UOWDep,
+        current_user: CurrentUserDep,
+        notification_service: NotificationServiceDep,
+        skip: int = 0,
+        limit: int = 10
+):
+    return await notification_service.get_user_notifications(uow, current_user.id, skip, limit)
+
+
+@router.put("/notifications/{notification_id}/read", response_model=NotificationResponse)
+async def read_notification_by_id(
+        notification_id: int,
+        uow: UOWDep,
+        current_user: CurrentUserDep,
+        notification_service: NotificationServiceDep
+):
+    return await notification_service.mark_notification_as_read(uow, notification_id, current_user.id)

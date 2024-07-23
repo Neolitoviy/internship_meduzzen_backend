@@ -9,6 +9,7 @@ from app.repositories.question import QuestionRepository
 from app.repositories.quiz import QuizRepository
 from app.repositories.quiz_result import QuizResultRepository
 from app.repositories.user import UserRepository
+from app.repositories.notification import NotificationRepository
 
 
 class IUnitOfWork(ABC):
@@ -21,6 +22,7 @@ class IUnitOfWork(ABC):
     questions: QuestionRepository
     answers: AnswerRepository
     quiz_results: QuizResultRepository
+    notifications: NotificationRepository
 
     @abstractmethod
     def __init__(self):
@@ -58,6 +60,7 @@ class UnitOfWork(IUnitOfWork):
         self.questions = QuestionRepository(self.session)
         self.answers = AnswerRepository(self.session)
         self.quiz_results = QuizResultRepository(self.session)
+        self.notifications = NotificationRepository(self.session)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):

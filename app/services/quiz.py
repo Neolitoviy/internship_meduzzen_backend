@@ -1,3 +1,5 @@
+from app.repositories.notification import NotificationRepository
+from app.schemas.notification import NotificationCreate
 from app.schemas.quiz import (
     QuizSchemaResponse, CreateQuizRequest, UpdateQuizRequest, QuizzesListResponse, PaginationLinks
 )
@@ -21,6 +23,16 @@ class QuizService:
                 'company_id': quiz_data.company_id,
                 'user_id': current_user_id
             })
+
+            # Send notifications to company members
+            company_members = await uow.company_members.find_abs_all(company_id=quiz_data.company_id)
+            for member in company_members:
+                notification = NotificationCreate(
+                    user_id=member.user_id,
+                    quiz_id=new_quiz.id,
+                    message=f"A new quiz '{new_quiz.title}' has been created. You are invited to participate."
+                )
+                await uow.notifications.add_one(notification.model_dump())
 
             for question_data in quiz_data.questions_data:
                 new_question = await uow.questions.add_one({

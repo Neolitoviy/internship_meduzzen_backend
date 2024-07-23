@@ -27,3 +27,4 @@ class User(Base):
     company_requests = relationship("CompanyRequest", back_populates="requested_user")
     quizzes = relationship("Quiz", back_populates="user")
     quiz_results = relationship("QuizResult", back_populates="user")
+    notifications = relationship("Notification", back_populates="user")

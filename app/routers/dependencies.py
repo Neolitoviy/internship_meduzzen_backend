@@ -7,6 +7,7 @@ from app.services.company import CompanyService
 from app.services.company_invitation import CompanyInvitationService
 from app.services.company_member import CompanyMemberService
 from app.services.company_request import CompanyRequestService
+from app.services.notification import NotificationService
 from app.services.question import QuestionService
 from app.services.quiz import QuizService
 from app.services.quiz_result import QuizResultService
@@ -54,6 +55,10 @@ def get_quiz_result_service() -> QuizResultService:
     return QuizResultService()
 
 
+def get_notification_service() -> NotificationService:
+    return NotificationService()
+
+
 UOWDep = Annotated[IUnitOfWork, Depends(get_uow)]
 UserServiceDep = Annotated[UserService, Depends(get_users_service)]
 CurrentUserDep = Annotated[UserService, Depends(authenticate_and_get_user)]
@@ -65,3 +70,4 @@ QuizServiceDep = Annotated[QuizService, Depends(get_quiz_service)]
 QuestionServiceDep = Annotated[QuestionService, Depends(get_question_service)]
 AnswerServiceDep = Annotated[AnswerService, Depends(get_answer_service)]
 QuizResultServiceDep = Annotated[QuizResultService, Depends(get_quiz_result_service)]
+NotificationServiceDep = Annotated[NotificationService, Depends(get_notification_service)]

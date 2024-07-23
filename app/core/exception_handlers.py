@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse
 from starlette import status
 from app.core.exceptions import UserNotFound, UserAlreadyExists, EmailAlreadyExists, CompanyNotFound, \
     CompanyPermissionError, InvitationNotFound, MemberNotFound, RequestNotFound, InvalidCredentials, PermissionDenied, \
-    BadRequest, AnswerNotFound, QuestionNotFound, QuizNotFound
+    BadRequest, AnswerNotFound, QuestionNotFound, QuizNotFound, NotificationNotFound
 
 
 def register_exception_handlers(app: FastAPI):
@@ -86,6 +86,12 @@ def register_exception_handlers(app: FastAPI):
         )
 
     @app.exception_handler(AnswerNotFound)
+    async def answer_not_found_handler(request: Request, exc: AnswerNotFound):
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND, content={"detail": exc.message}
+        )
+
+    @app.exception_handler(NotificationNotFound)
     async def answer_not_found_handler(request: Request, exc: AnswerNotFound):
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND, content={"detail": exc.message}

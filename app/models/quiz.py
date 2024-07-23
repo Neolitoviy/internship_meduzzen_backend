@@ -21,3 +21,4 @@ class Quiz(Base):
     company = relationship("Company", back_populates="quizzes")
     user = relationship("User", back_populates="quizzes")
     quiz_results = relationship("QuizResult", back_populates="quiz")
+    notifications = relationship("Notification", back_populates="quiz")
