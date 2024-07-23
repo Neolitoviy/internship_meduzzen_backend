@@ -46,7 +46,7 @@ class QuizResultRepository(SQLAlchemyRepository):
         result = await self.session.execute(stmt)
         return result.fetchall()
 
-    async def get_quiz_trends_by_date_range(self, user_id: int, start_date: datetime, end_date: datetime):
+    async def get_quiz_trends_by_date_range(self, user_id: int, start_date: datetime, end_date: datetime, skip: int, limit: int):
         stmt = (
             select(
                 self.model.quiz_id,
@@ -59,6 +59,8 @@ class QuizResultRepository(SQLAlchemyRepository):
             .where(self.model.created_at >= start_date)
             .where(self.model.created_at <= end_date)
             .group_by(self.model.quiz_id)
+            .offset(skip)
+            .limit(limit)
         )
         result = await self.session.execute(stmt)
         return result.fetchall()

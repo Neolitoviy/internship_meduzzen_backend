@@ -1,7 +1,7 @@
 import csv
 import json
 from io import StringIO
-from typing import List, Dict, Any
+from typing import List
 from app.db.redis_db import get_redis_client
 from app.schemas.analytics import CompanyUserLastAttempt, QuizTrend, CompanyMemberAverageScore, LastQuizAttempt, \
     QuizScore
@@ -138,14 +138,15 @@ class QuizResultService:
 
     @staticmethod  # BE 15 2 2
     async def get_user_quiz_trends(uow: IUnitOfWork, company_id: int, user_id: int, start_date: datetime,
-                                   end_date: datetime, current_user_id: int) -> List[QuizTrend]:
+                                   end_date: datetime, current_user_id: int, skip: int, limit: int) -> List[QuizTrend]:
         async with uow:
             company = await uow.companies.find_one(id=company_id)
             if company.owner_id != current_user_id and not await uow.company_members.find_one(
                     company_id=company_id, user_id=current_user_id, is_admin=True):
                 raise PermissionDenied("You do not have permission to view this user's quiz trends.")
 
-            quiz_trends = await uow.quiz_results.get_quiz_trends_by_date_range(user_id, start_date, end_date)
+            quiz_trends = await uow.quiz_results.get_quiz_trends_by_date_range(user_id, start_date, end_date, skip,
+                                                                               limit)
             quiz_trends_with_averages = []
             for trend in quiz_trends:
                 quiz = await uow.quizzes.find_one(id=trend.quiz_id)

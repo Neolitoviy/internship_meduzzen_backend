@@ -86,9 +86,11 @@ async def get_user_quiz_trends(
         end_date: datetime,
         current_user: CurrentUserDep,
         uow: UOWDep,
-        service: QuizResultServiceDep
+        service: QuizResultServiceDep,
+        skip: int = 0,
+        limit: int = 10
 ):
-    return await service.get_user_quiz_trends(uow, company_id, user_id, start_date, end_date, current_user.id)
+    return await service.get_user_quiz_trends(uow, company_id, user_id, start_date, end_date, current_user.id, skip, limit)
 
 
 @router.get("/company/{company_id}/user_last_attempts", response_model=List[CompanyUserLastAttempt])
