@@ -10,6 +10,12 @@ class CompanyService:
         company_dict['owner_id'] = user_id
         async with uow:
             new_company = await uow.companies.add_one(company_dict)
+            company_member_dict = {
+                'company_id': new_company.id,
+                'user_id': user_id,
+                'is_admin': True  # Owner like admin
+            }
+            await uow.company_members.add_one(company_member_dict)
             return CompanyResponse.model_validate(new_company)
 
     @staticmethod
