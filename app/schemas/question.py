@@ -1,8 +1,6 @@
-from typing import List
-
 from pydantic import BaseModel, conlist
 
-from app.schemas.answer import AnswerSchemaCreate, AnswerSchemaResponse
+from app.schemas.answer import AnswerSchemaCreate
 
 
 class QuestionSchemaCreate(BaseModel):

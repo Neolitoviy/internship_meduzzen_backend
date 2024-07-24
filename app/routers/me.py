@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, status
 from fastapi.security import HTTPBearer
 
 from app.core.exceptions import InvalidCredentials
@@ -24,7 +24,7 @@ router = APIRouter(
 auth_scheme = HTTPBearer()
 
 
-@router.post("/sign-in", response_model=Token)
+@router.post("/sign-in", response_model=Token, status_code=status.HTTP_200_OK)
 async def sign_in(
     request: SignInRequest, uow: UOWDep, user_service: UserServiceDep
 ) -> Token:
@@ -34,14 +34,18 @@ async def sign_in(
     return token
 
 
-@router.get("/", response_model=UserResponse)
+@router.get("/", response_model=UserResponse, status_code=status.HTTP_200_OK)
 async def get_authenticated_user(
     current_user: UserResponse = Depends(authenticate_and_get_user),
 ) -> UserResponse:
     return current_user
 
 
-@router.get("/requests", response_model=CompanyRequestListResponse)
+@router.get(
+    "/requests",
+    response_model=CompanyRequestListResponse,
+    status_code=status.HTTP_200_OK,
+)
 async def get_requests(
     request: Request,
     uow: UOWDep,
@@ -55,7 +59,11 @@ async def get_requests(
     )
 
 
-@router.get("/invites", response_model=CompanyInvitationListResponse)
+@router.get(
+    "/invites",
+    response_model=CompanyInvitationListResponse,
+    status_code=status.HTTP_200_OK,
+)
 async def get_invitations(
     request: Request,
     uow: UOWDep,
