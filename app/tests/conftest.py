@@ -1,9 +1,10 @@
 import asyncio
-import pytest
 from typing import AsyncGenerator
-from starlette.testclient import TestClient
+
+import pytest
 from httpx import AsyncClient
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from starlette.testclient import TestClient
 
 from app.core.config import settings
 from app.main import app
@@ -14,7 +15,7 @@ from app.services.company import CompanyService
 from app.services.company_invitation import CompanyInvitationService
 from app.services.company_member import CompanyMemberService
 from app.services.user import UserService
-from app.utils.unitofwork import UnitOfWork, IUnitOfWork
+from app.utils.unitofwork import IUnitOfWork, UnitOfWork
 
 engine = create_async_engine(settings.sqlalchemy_database_url, future=True, echo=True)
 TestingSessionLocal = async_sessionmaker(bind=engine, expire_on_commit=False)
@@ -62,7 +63,7 @@ async def current_user_id(uow: IUnitOfWork) -> int:
         firstname="Test",
         lastname="User",
         password1="password",
-        password2="password"
+        password2="password",
     )
     user = await user_service.create_user(uow, user_create)
     return user.id
@@ -75,7 +76,7 @@ async def current_user(uow: IUnitOfWork, user_service: UserService) -> User:
         firstname="Test",
         lastname="User",
         password1="password",
-        password2="password"
+        password2="password",
     )
     user = await user_service.create_user(uow, user_create)
     return user
@@ -110,10 +111,12 @@ async def create_test_user(uow: IUnitOfWork, user_service: UserService):
             firstname="Test",
             lastname="User",
             password1=password,
-            password2=password
+            password2=password,
         )
         user = await user_service.create_user(uow, user_create)
-        token_response = await user_service.authenticate_user(uow, email=email, password=password)
+        token_response = await user_service.authenticate_user(
+            uow, email=email, password=password
+        )
         return user, token_response.access_token
 
     return _create_test_user

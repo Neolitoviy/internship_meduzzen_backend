@@ -1,5 +1,7 @@
 from typing import List, Optional
+
 from pydantic import BaseModel, conlist
+
 from app.schemas.question import QuestionSchemaCreate, QuestionSchemaResponse
 
 
@@ -10,9 +12,7 @@ class CreateQuizRequest(BaseModel):
     questions_data: conlist(QuestionSchemaCreate, min_length=2)
     company_id: int
 
-    model_config = {
-        'from_attributes': True
-    }
+    model_config = {"from_attributes": True}
 
 
 class QuizSchemaResponse(BaseModel):
@@ -23,9 +23,7 @@ class QuizSchemaResponse(BaseModel):
     company_id: int
     user_id: int
 
-    model_config = {
-        'from_attributes': True
-    }
+    model_config = {"from_attributes": True}
 
 
 class PaginationLinks(BaseModel):
@@ -40,9 +38,7 @@ class QuizzesListResponse(BaseModel):
     pagination: PaginationLinks
     data: List[QuizSchemaResponse]
 
-    model_config = {
-        'from_attributes': True
-    }
+    model_config = {"from_attributes": True}
 
 
 class UpdateQuizRequest(BaseModel):
@@ -50,6 +46,4 @@ class UpdateQuizRequest(BaseModel):
     description: str
     frequency_in_days: int
 
-    model_config = {
-        'from_attributes': True
-    }
+    model_config = {"from_attributes": True}

@@ -1,4 +1,5 @@
-from abc import abstractmethod, ABC
+from abc import ABC, abstractmethod
+
 from app.db.database import async_session
 from app.repositories.answer import AnswerRepository
 from app.repositories.company import CompanyRepository
@@ -23,24 +24,19 @@ class IUnitOfWork(ABC):
     quiz_results: QuizResultRepository
 
     @abstractmethod
-    def __init__(self):
-        ...
+    def __init__(self): ...
 
     @abstractmethod
-    async def __aenter__(self):
-        ...
+    async def __aenter__(self): ...
 
     @abstractmethod
-    async def __aexit__(self, *args):
-        ...
+    async def __aexit__(self, *args): ...
 
     @abstractmethod
-    async def commit(self):
-        ...
+    async def commit(self): ...
 
     @abstractmethod
-    async def rollback(self):
-        ...
+    async def rollback(self): ...
 
 
 class UnitOfWork(IUnitOfWork):

@@ -1,7 +1,5 @@
-import pytest
 from httpx import AsyncClient
 
-from app.main import app
 from app.schemas.company import CompanyCreate
 from app.services.company import CompanyService
 from app.services.company_invitation import CompanyInvitationService
@@ -12,8 +10,15 @@ from app.utils.unitofwork import IUnitOfWork
 
 async def test_remove_member(ac: AsyncClient, uow: IUnitOfWork, current_user):
     company = await uow.companies.add_one(
-        {"name": "Test Company", "description": "Test Description", "owner_id": current_user.id})
-    member = await uow.company_members.add_one({"company_id": company.id, "user_id": current_user.id})
+        {
+            "name": "Test Company",
+            "description": "Test Description",
+            "owner_id": current_user.id,
+        }
+    )
+    member = await uow.company_members.add_one(
+        {"company_id": company.id, "user_id": current_user.id}
+    )
     await uow.commit()
 
     response = await ac.delete(f"/company_members/{member.id}")
@@ -22,8 +27,15 @@ async def test_remove_member(ac: AsyncClient, uow: IUnitOfWork, current_user):
 
 async def test_leave_company(ac: AsyncClient, uow: IUnitOfWork, current_user):
     company = await uow.companies.add_one(
-        {"name": "Test Company", "description": "Test Description", "owner_id": current_user.id})
-    member = await uow.company_members.add_one({"company_id": company.id, "user_id": current_user.id})
+        {
+            "name": "Test Company",
+            "description": "Test Description",
+            "owner_id": current_user.id,
+        }
+    )
+    member = await uow.company_members.add_one(
+        {"company_id": company.id, "user_id": current_user.id}
+    )
     await uow.commit()
 
     response = await ac.post(f"/company_members/{company.id}/leave")
@@ -41,17 +53,21 @@ async def test_get_memberships(ac: AsyncClient, uow: IUnitOfWork, current_user):
     assert isinstance(data["memberships"], list)
 
 
-async def test_appoint_admin(ac: AsyncClient, uow: IUnitOfWork, user_service: UserService,
-                             company_service: CompanyService, member_service: CompanyMemberService,
-                             invitation_service: CompanyInvitationService, create_test_user):
+async def test_appoint_admin(
+    ac: AsyncClient,
+    uow: IUnitOfWork,
+    user_service: UserService,
+    company_service: CompanyService,
+    member_service: CompanyMemberService,
+    invitation_service: CompanyInvitationService,
+    create_test_user,
+):
     # Create the company owner and get the token
     owner, owner_token = await create_test_user(email="owner@example.com")
 
     # Create the company
     company_create = CompanyCreate(
-        name="Test Company",
-        description="A test company",
-        visibility=True
+        name="Test Company", description="A test company", visibility=True
     )
     company = await company_service.create_company(uow, company_create, owner.id)
 
@@ -62,33 +78,41 @@ async def test_appoint_admin(ac: AsyncClient, uow: IUnitOfWork, user_service: Us
     await invitation_service.send_invitation(uow, company.id, member.email, owner.id)
 
     # Accept the invitation as the user
-    invitation = await uow.company_invitations.find_one(company_id=company.id, invited_user_id=member.id)
+    invitation = await uow.company_invitations.find_one(
+        company_id=company.id, invited_user_id=member.id
+    )
     await invitation_service.accept_invitation(uow, invitation.id, member.id)
 
     # Appoint the user as an administrator
     response = await ac.post(
         f"/company_members/{company.id}/admin/{member.id}/appoint",
-        headers={"Authorization": f"Bearer {owner_token}"}
+        headers={"Authorization": f"Bearer {owner_token}"},
     )
     assert response.status_code == 204
 
     # Check that the user is now an administrator
     async with uow:
-        updated_member = await uow.company_members.find_one(company_id=company.id, user_id=member.id)
+        updated_member = await uow.company_members.find_one(
+            company_id=company.id, user_id=member.id
+        )
     assert updated_member.is_admin is True
 
 
-async def test_remove_admin(ac: AsyncClient, uow: IUnitOfWork, user_service: UserService,
-                            company_service: CompanyService, member_service: CompanyMemberService,
-                            invitation_service: CompanyInvitationService, create_test_user):
+async def test_remove_admin(
+    ac: AsyncClient,
+    uow: IUnitOfWork,
+    user_service: UserService,
+    company_service: CompanyService,
+    member_service: CompanyMemberService,
+    invitation_service: CompanyInvitationService,
+    create_test_user,
+):
     # Create the company owner and get the token
     owner, owner_token = await create_test_user
 
     # Create the company
     company_create = CompanyCreate(
-        name="Test Company",
-        description="A test company",
-        visibility=True
+        name="Test Company", description="A test company", visibility=True
     )
     company = await company_service.create_company(uow, company_create, owner.id)
 
@@ -99,7 +123,9 @@ async def test_remove_admin(ac: AsyncClient, uow: IUnitOfWork, user_service: Use
     await invitation_service.send_invitation(uow, company.id, member.email, owner.id)
 
     # Accept the invitation as the user
-    invitation = await uow.company_invitations.find_one(company_id=company.id, invited_user_id=member.id)
+    invitation = await uow.company_invitations.find_one(
+        company_id=company.id, invited_user_id=member.id
+    )
     await invitation_service.accept_invitation(uow, invitation.id, member.id)
 
     # Appoint the user as an administrator
@@ -109,11 +135,13 @@ async def test_remove_admin(ac: AsyncClient, uow: IUnitOfWork, user_service: Use
     # Remove the user as an administrator
     response = await ac.post(
         f"/company_members/{company.id}/admin/{member.id}/remove",
-        headers={"Authorization": f"Bearer {owner_token}"}
+        headers={"Authorization": f"Bearer {owner_token}"},
     )
     assert response.status_code == 204
 
     # Check that the user is no longer an administrator
     async with uow:
-        updated_member = await uow.company_members.find_one(company_id=company.id, user_id=member.id)
+        updated_member = await uow.company_members.find_one(
+            company_id=company.id, user_id=member.id
+        )
     assert updated_member.is_admin is False
