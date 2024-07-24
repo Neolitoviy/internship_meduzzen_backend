@@ -85,7 +85,6 @@ async def update_company(
 
 @router.delete(
     "/{company_id}",
-    response_model=CompanyResponse,
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_company(
