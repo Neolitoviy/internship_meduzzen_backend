@@ -1,6 +1,6 @@
 from typing import List
 
-from fastapi import APIRouter
+from fastapi import APIRouter, status
 
 from app.routers.dependencies import (
     AnswerServiceDep,
@@ -21,7 +21,11 @@ router = APIRouter(
 )
 
 
-@router.post("/{quiz_id}/", response_model=QuestionSchemaResponse)
+@router.post(
+    "/{quiz_id}/",
+    response_model=QuestionSchemaResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_question(
     quiz_id: int,
     question_data: QuestionSchemaCreate,
@@ -32,7 +36,11 @@ async def create_question(
     return await service.create_question(uow, quiz_id, question_data, current_user.id)
 
 
-@router.put("/{question_id}", response_model=QuestionSchemaResponse)
+@router.put(
+    "/{question_id}",
+    response_model=QuestionSchemaResponse,
+    status_code=status.HTTP_200_OK,
+)
 async def update_question(
     question_id: int,
     question_data: UpdateQuestionRequest,
@@ -45,7 +53,7 @@ async def update_question(
     )
 
 
-@router.delete("/{question_id}", status_code=204)
+@router.delete("/{question_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_question(
     question_id: int,
     uow: UOWDep,
@@ -56,7 +64,9 @@ async def delete_question(
 
 
 @router.get(
-    "/question/{question_id}/answers", response_model=List[AnswerSchemaResponse]
+    "/question/{question_id}/answers",
+    response_model=List[AnswerSchemaResponse],
+    status_code=status.HTTP_200_OK,
 )
 async def get_answers_by_question_id(
     question_id: int,
