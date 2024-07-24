@@ -67,7 +67,7 @@ class CompanyRequestService:
     @staticmethod
     async def decline_request(
         uow: IUnitOfWork, request_id: int, current_user_id: int
-    ) -> None:
+    ) -> CompanyRequestResponse:
         async with uow:
             request = await uow.company_requests.find_one(id=request_id)
             if not request:
@@ -75,7 +75,7 @@ class CompanyRequestService:
             company = await uow.companies.find_one(id=request.company_id)
             if company and company.owner_id == current_user_id:
                 request.status = "declined"
-                return
+                return CompanyRequestResponse.model_validate(request)
         raise CompanyPermissionError(
             "You don't have permission to decline this request"
         )

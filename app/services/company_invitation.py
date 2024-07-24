@@ -80,12 +80,12 @@ class CompanyInvitationService:
     @staticmethod
     async def decline_invitation(
         uow: IUnitOfWork, invitation_id: int, current_user_id: int
-    ) -> None:
+    ) -> CompanyInvitationResponse:
         async with uow:
             invitation = await uow.company_invitations.find_one(id=invitation_id)
             if invitation and invitation.invited_user_id == current_user_id:
                 invitation.status = "declined"
-                return
+                return CompanyInvitationResponse.model_validate(invitation)
         raise CompanyPermissionError(
             "You don't have permission to decline this invitation"
         )
