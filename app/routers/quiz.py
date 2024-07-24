@@ -1,6 +1,4 @@
-from typing import List
-
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Request
 
 from app.routers.dependencies import CurrentUserDep, QuizServiceDep, UOWDep
 from app.schemas.quiz import (
@@ -9,7 +7,6 @@ from app.schemas.quiz import (
     QuizzesListResponse,
     UpdateQuizRequest,
 )
-from app.services.quiz import QuizService
 
 router = APIRouter(
     prefix="/quiz",
