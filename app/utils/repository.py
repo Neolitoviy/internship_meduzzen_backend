@@ -3,6 +3,8 @@ from abc import ABC, abstractmethod
 from sqlalchemy import RowMapping, delete, func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.exceptions import AddRecordError, RecordNotFound
+
 
 class AbstractRepository(ABC):
     @abstractmethod
@@ -47,7 +49,7 @@ class SQLAlchemyRepository(AbstractRepository):
         res = await self.session.execute(stmt)
         result = res.fetchone()
         if result is None:
-            raise ValueError("Failed to add record")
+            raise AddRecordError("Failed to add record")
         return result._mapping
 
     async def edit_one(self, id: int, data: dict) -> RowMapping:
@@ -60,7 +62,7 @@ class SQLAlchemyRepository(AbstractRepository):
         res = await self.session.execute(stmt)
         result = res.fetchone()
         if result is None:
-            raise ValueError("Record not found")
+            raise RecordNotFound("Record not found")
         return result._mapping
 
     async def find_all(self, skip: int, limit: int, **filter_by):
@@ -71,7 +73,10 @@ class SQLAlchemyRepository(AbstractRepository):
     async def find_one(self, **filter_by):
         stmt = select(self.model).filter_by(**filter_by)
         res = await self.session.execute(stmt)
-        return res.scalar_one_or_none()
+        result = res.scalar_one_or_none()
+        if result is None:
+            raise RecordNotFound("Record not found")
+        return result
 
     async def delete_one(self, id: int) -> RowMapping:
         stmt = (
@@ -80,7 +85,7 @@ class SQLAlchemyRepository(AbstractRepository):
         res = await self.session.execute(stmt)
         result = res.fetchone()
         if result is None:
-            raise ValueError("Record not found")
+            raise RecordNotFound("Record not found")
         return result._mapping
 
     async def delete_many(self, **filters):
