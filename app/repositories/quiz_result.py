@@ -1,4 +1,5 @@
-from sqlalchemy import select, func
+from sqlalchemy import func, select
+
 from app.models.quiz_result import QuizResult
 from app.utils.repository import SQLAlchemyRepository
 

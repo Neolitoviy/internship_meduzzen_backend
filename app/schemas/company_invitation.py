@@ -1,16 +1,14 @@
-from typing import Optional, List
+from datetime import datetime
+from typing import List, Optional
 
 from pydantic import BaseModel
-from datetime import datetime
 
 
 class CompanyInvitationBase(BaseModel):
     company_id: int
     invited_user_id: int
 
-    model_config = {
-        'from_attributes': True
-    }
+    model_config = {"from_attributes": True}
 
 
 class CompanyInvitationCreate(CompanyInvitationBase):
@@ -38,6 +36,4 @@ class CompanyInvitationListResponse(BaseModel):
     pagination: PaginationLinks
     invitations: List[CompanyInvitationResponse]
 
-    model_config = {
-        'from_attributes': True
-    }
+    model_config = {"from_attributes": True}
