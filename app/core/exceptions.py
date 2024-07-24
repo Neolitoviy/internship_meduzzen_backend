@@ -80,3 +80,15 @@ class AnswerNotFound(Exception):
     def __init__(self, message: str):
         self.message = message
         super().__init__(self.message)
+
+
+class RecordNotFound(Exception):
+    def __init__(self, message: str):
+        self.message = message
+        super().__init__(self.message)
+
+
+class AddRecordError(Exception):
+    def __init__(self, message: str):
+        self.message = message
+        super().__init__(self.message)
