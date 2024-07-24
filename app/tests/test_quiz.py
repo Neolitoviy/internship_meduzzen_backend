@@ -1,8 +1,9 @@
 import pytest
-from app.services.quiz import QuizService
-from app.schemas.quiz import CreateQuizRequest, QuizSchemaResponse
-from app.utils.unitofwork import IUnitOfWork
+
 from app.core.exceptions import PermissionDenied
+from app.schemas.quiz import CreateQuizRequest, QuizSchemaResponse
+from app.services.quiz import QuizService
+from app.utils.unitofwork import IUnitOfWork
 
 
 async def test_create_quiz(uow: IUnitOfWork, current_user_id: int):
@@ -16,17 +17,17 @@ async def test_create_quiz(uow: IUnitOfWork, current_user_id: int):
                 "question_text": "Question 1",
                 "answers": [
                     {"answer_text": "Answer 1", "is_correct": True},
-                    {"answer_text": "Answer 2", "is_correct": False}
-                ]
+                    {"answer_text": "Answer 2", "is_correct": False},
+                ],
             },
             {
                 "question_text": "Question 2",
                 "answers": [
                     {"answer_text": "Answer 1", "is_correct": True},
-                    {"answer_text": "Answer 2", "is_correct": False}
-                ]
-            }
-        ]
+                    {"answer_text": "Answer 2", "is_correct": False},
+                ],
+            },
+        ],
     )
 
     service = QuizService()
@@ -45,7 +46,9 @@ async def test_get_quizzes(uow: IUnitOfWork, current_user_id: int):
     skip = 0
     limit = 10
 
-    quizzes_response = await service.get_quizzes(uow, company_id, skip, limit, current_user_id)
+    quizzes_response = await service.get_quizzes(
+        uow, company_id, skip, limit, current_user_id
+    )
 
     assert quizzes_response.total_pages > 0
     assert quizzes_response.current_page == 1
@@ -62,10 +65,10 @@ async def test_permission_denied_create_quiz(uow: IUnitOfWork, current_user_id: 
                 "question_text": "Question 1",
                 "answers": [
                     {"answer_text": "Answer 1", "is_correct": True},
-                    {"answer_text": "Answer 2", "is_correct": False}
-                ]
+                    {"answer_text": "Answer 2", "is_correct": False},
+                ],
             }
-        ]
+        ],
     )
 
     service = QuizService()

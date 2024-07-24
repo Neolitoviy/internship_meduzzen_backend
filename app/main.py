@@ -1,19 +1,21 @@
+import logging
+
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
 from app.core.config import settings
 from app.core.exception_handlers import register_exception_handlers
-from app.routers.user import router as users_router
-from app.routers.healthcheck import router as health_router
+from app.core.logging_config import logging_config
+from app.routers.answer import router as answer_router
 from app.routers.company import router as company_router
 from app.routers.company_invitation import router as company_invitation_router
 from app.routers.company_request import router as company_request_router
-from app.routers.quiz import router as quiz_router
-from app.routers.question import router as question_router
-from app.routers.answer import router as answer_router
+from app.routers.healthcheck import router as health_router
 from app.routers.me import router as me_router
-from app.core.logging_config import logging_config
-import logging
+from app.routers.question import router as question_router
+from app.routers.quiz import router as quiz_router
+from app.routers.user import router as users_router
 
 logger = logging.getLogger(__name__)
 

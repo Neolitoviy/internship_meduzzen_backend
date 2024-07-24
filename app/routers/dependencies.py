@@ -1,4 +1,5 @@
 from typing import Annotated
+
 from fastapi import Depends
 
 from app.services.answer import AnswerService
@@ -9,8 +10,8 @@ from app.services.company_member import CompanyMemberService
 from app.services.company_request import CompanyRequestService
 from app.services.question import QuestionService
 from app.services.quiz import QuizService
-from app.utils.unitofwork import UnitOfWork, IUnitOfWork
 from app.services.user import UserService
+from app.utils.unitofwork import IUnitOfWork, UnitOfWork
 
 
 def get_uow() -> IUnitOfWork:
@@ -53,9 +54,15 @@ UOWDep = Annotated[IUnitOfWork, Depends(get_uow)]
 UserServiceDep = Annotated[UserService, Depends(get_users_service)]
 CurrentUserDep = Annotated[UserService, Depends(authenticate_and_get_user)]
 CompanyServiceDep = Annotated[CompanyService, Depends(get_company_service)]
-CompanyInvitationServiceDep = Annotated[CompanyInvitationService, Depends(get_company_invitation_service)]
-CompanyMemberServiceDep = Annotated[CompanyMemberService, Depends(get_company_member_service)]
-CompanyRequestServiceDep = Annotated[CompanyRequestService, Depends(get_company_request_service)]
+CompanyInvitationServiceDep = Annotated[
+    CompanyInvitationService, Depends(get_company_invitation_service)
+]
+CompanyMemberServiceDep = Annotated[
+    CompanyMemberService, Depends(get_company_member_service)
+]
+CompanyRequestServiceDep = Annotated[
+    CompanyRequestService, Depends(get_company_request_service)
+]
 QuizServiceDep = Annotated[QuizService, Depends(get_quiz_service)]
 QuestionServiceDep = Annotated[QuestionService, Depends(get_question_service)]
 AnswerServiceDep = Annotated[AnswerService, Depends(get_answer_service)]
