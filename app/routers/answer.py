@@ -1,6 +1,6 @@
 from typing import List
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
 
 from app.routers.dependencies import AnswerServiceDep, CurrentUserDep, UOWDep
 from app.schemas.answer import (
@@ -16,7 +16,11 @@ router = APIRouter(
 )
 
 
-@router.post("/{question_id}/", response_model=AnswerSchemaResponse)
+@router.post(
+    "/{question_id}/",
+    response_model=AnswerSchemaResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_answer(
     question_id: int,
     answer_data: AnswerSchemaCreate,
