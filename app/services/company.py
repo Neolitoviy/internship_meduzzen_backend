@@ -100,6 +100,8 @@ class CompanyService:
             company = await uow.companies.find_one(id=company_id)
             if not company:
                 raise CompanyNotFound(f"Company with id {company_id} not found")
+            # Delete all members and then company
+            await uow.company_members.delete_many(company_id=company_id)
             await uow.companies.delete_one(company_id)
 
     @staticmethod

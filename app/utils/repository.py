@@ -26,6 +26,10 @@ class AbstractRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    async def delete_many(self, **filters):
+        raise NotImplementedError
+
+    @abstractmethod
     async def count_all(self, **filter_by) -> int:
         raise NotImplementedError
 
@@ -78,6 +82,10 @@ class SQLAlchemyRepository(AbstractRepository):
         if result is None:
             raise ValueError("Record not found")
         return result._mapping
+
+    async def delete_many(self, **filters):
+        stmt = delete(self.model).filter_by(**filters)
+        await self.session.execute(stmt)
 
     async def count_all(self, **filter_by) -> int:
         stmt = select(func.count()).select_from(self.model).filter_by(**filter_by)
