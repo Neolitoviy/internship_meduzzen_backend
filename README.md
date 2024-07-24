@@ -291,7 +291,7 @@ celery -A app.celery:celery worker --loglevel=INFO --pool=solo
 ### 4. Start Celery beat (scheduler):
 
 ```bash
-celery -A app.celery:celery worker --loglevel=INFO
+celery -A app.celery:celery beat --loglevel=INFO
 ```
 
 ### 5. Start Flower (Celery monitoring tool):
