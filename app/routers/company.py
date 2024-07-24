@@ -114,7 +114,7 @@ async def request_to_join_company(
 @router.post(
     "/{company_id}/invite/{user_id}",
     response_model=CompanyInvitationResponse,
-    status_code=status.HTTP_201_CREATED,
+    status_code=status.HTTP_200_OK,
 )
 async def invite_user_to_company(
     company_id: int,
@@ -134,7 +134,8 @@ async def leave_company(
     current_user: CurrentUserDep,
     service: CompanyMemberServiceDep,
 ):
-    return await service.leave_company(uow, company_id, current_user.id)
+    await service.leave_company(uow, company_id, current_user.id)
+    return {"detail": "Successfully left the company"}
 
 
 @router.get(
@@ -166,9 +167,7 @@ async def remove_member(
     return await service.remove_member(uow, member_id, current_user.id)
 
 
-@router.post(
-    "/{company_id}/admin/{user_id}/appoint", status_code=status.HTTP_204_NO_CONTENT
-)
+@router.post("/{company_id}/admin/{user_id}/appoint", status_code=status.HTTP_200_OK)
 async def appoint_admin(
     company_id: int,
     user_id: int,
@@ -176,12 +175,11 @@ async def appoint_admin(
     current_user: CurrentUserDep,
     service: CompanyMemberServiceDep,
 ):
-    return await service.appoint_admin(uow, company_id, user_id, current_user.id)
+    await service.appoint_admin(uow, company_id, user_id, current_user.id)
+    return {"detail": "User appointed as admin successfully"}
 
 
-@router.post(
-    "/{company_id}/admin/{user_id}/remove", status_code=status.HTTP_204_NO_CONTENT
-)
+@router.post("/{company_id}/admin/{user_id}/remove", status_code=status.HTTP_200_OK)
 async def remove_admin(
     company_id: int,
     user_id: int,
@@ -189,7 +187,8 @@ async def remove_admin(
     current_user: CurrentUserDep,
     service: CompanyMemberServiceDep,
 ):
-    return await service.remove_admin(uow, company_id, user_id, current_user.id)
+    await service.remove_admin(uow, company_id, user_id, current_user.id)
+    return {"detail": "User removed as admin successfully"}
 
 
 @router.get(
