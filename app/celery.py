@@ -7,7 +7,7 @@ from app.core.tasks import check_quiz_completion
 
 nest_asyncio.apply()
 
-celery = Celery("tasks", broker=settings.celery_broker_url)
+celery = Celery("tasks", broker=f"redis://{settings.redis_host}:{settings.redis_port}/0")
 
 
 @celery.task
