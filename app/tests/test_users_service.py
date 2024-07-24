@@ -1,8 +1,9 @@
 import pytest
 from httpx import AsyncClient
+
 from app.core.exceptions import UserNotFound
-from app.services.user import UserService
 from app.schemas.user import UserCreate, UserUpdate
+from app.services.user import UserService
 from app.utils.unitofwork import IUnitOfWork
 
 
@@ -14,7 +15,7 @@ async def test_create_user(ac: AsyncClient, uow: IUnitOfWork):
         firstname="John",
         lastname="Doe",
         password1="password",
-        password2="password"
+        password2="password",
     )
 
     async with uow:
@@ -35,7 +36,7 @@ async def test_get_user_by_id(ac: AsyncClient, uow: IUnitOfWork):
         firstname="Jane",
         lastname="Doe",
         password1="password",
-        password2="password"
+        password2="password",
     )
 
     async with uow:
@@ -54,17 +55,16 @@ async def test_update_user(ac: AsyncClient, uow: IUnitOfWork):
         firstname="Alice",
         lastname="Smith",
         password1="password",
-        password2="password"
+        password2="password",
     )
 
     async with uow:
         created_user = await user_service.create_user(uow, user_create)
 
-        user_update = UserUpdate(
-            firstname="AliceUpdated",
-            lastname="SmithUpdated"
+        user_update = UserUpdate(firstname="AliceUpdated", lastname="SmithUpdated")
+        updated_user = await user_service.update_user(
+            uow, created_user.id, user_update, created_user.id
         )
-        updated_user = await user_service.update_user(uow, created_user.id, user_update, created_user.id)
 
     assert updated_user.firstname == user_update.firstname
     assert updated_user.lastname == user_update.lastname
@@ -78,12 +78,14 @@ async def test_delete_user(ac: AsyncClient, uow: IUnitOfWork):
         firstname="Bob",
         lastname="Brown",
         password1="password",
-        password2="password"
+        password2="password",
     )
 
     async with uow:
         created_user = await user_service.create_user(uow, user_create)
-        deleted_user = await user_service.delete_user(uow, created_user.id, created_user.id)
+        deleted_user = await user_service.delete_user(
+            uow, created_user.id, created_user.id
+        )
 
     assert deleted_user.email == user_create.email
 

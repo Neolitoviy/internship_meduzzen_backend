@@ -1,12 +1,13 @@
 import jwt
-from app.core.config import settings
 from fastapi import HTTPException
+
+from app.core.config import settings
 
 
 class VerifyToken:
     def __init__(self, token: str):
         self.token = token
-        self.jwks_url = f'https://{settings.auth0_domain}/.well-known/jwks.json'
+        self.jwks_url = f"https://{settings.auth0_domain}/.well-known/jwks.json"
         self.jwks_client = jwt.PyJWKClient(self.jwks_url)
 
     def verify(self) -> dict:
@@ -23,7 +24,7 @@ class VerifyToken:
                 signing_key,
                 algorithms=[settings.auth0_algorithms],
                 audience=settings.auth0_api_audience,
-                issuer=f'https://{settings.auth0_domain}/',
+                issuer=f"https://{settings.auth0_domain}/",
             )
         except jwt.PyJWTError as error:
             raise HTTPException(status_code=401, detail=str(error))
