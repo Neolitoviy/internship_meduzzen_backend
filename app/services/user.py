@@ -108,14 +108,13 @@ class UserService:
 
     async def delete_user(
         self, uow: IUnitOfWork, user_id: int, current_user_id: int
-    ) -> UserResponse:
+    ) -> None:
         await self.check_user_permission(user_id, current_user_id)
         async with uow:
             user = await uow.users.find_one(id=user_id)
             if not user:
                 raise UserNotFound(f"User with id {user_id} not found")
-            updated_user = await uow.users.edit_one(user_id, {"is_active": False})
-            return UserResponse.model_validate(updated_user)
+            await uow.users.edit_one(user_id, {"is_active": False})
 
     @staticmethod
     async def authenticate_user(

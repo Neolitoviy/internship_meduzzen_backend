@@ -2,7 +2,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel, conlist
 
-from app.schemas.question import QuestionSchemaCreate, QuestionSchemaResponse
+from app.schemas.question import QuestionSchemaCreate
 
 
 class CreateQuizRequest(BaseModel):

@@ -1,5 +1,7 @@
 from datetime import datetime
 
+from sqlalchemy import RowMapping
+
 from app.core.exceptions import CompanyPermissionError, InvitationNotFound
 from app.schemas.company_invitation import (
     CompanyInvitationCreate,
@@ -53,7 +55,7 @@ class CompanyInvitationService:
     @staticmethod
     async def accept_invitation(
         uow: IUnitOfWork, invitation_id: int, current_user_id: int
-    ) -> None:
+    ) -> RowMapping:
         async with uow:
             invitation = await uow.company_invitations.find_one(
                 id=invitation_id, invited_user_id=current_user_id
@@ -71,18 +73,19 @@ class CompanyInvitationService:
                 "user_id": current_user_id,
                 "created_at": datetime.utcnow(),
             }
-            await uow.company_members.add_one(membership_data)
+            new_membership = await uow.company_members.add_one(membership_data)
             invitation.status = "accepted"
+            return new_membership
 
     @staticmethod
     async def decline_invitation(
         uow: IUnitOfWork, invitation_id: int, current_user_id: int
-    ) -> None:
+    ) -> CompanyInvitationResponse:
         async with uow:
             invitation = await uow.company_invitations.find_one(id=invitation_id)
             if invitation and invitation.invited_user_id == current_user_id:
                 invitation.status = "declined"
-                return
+                return CompanyInvitationResponse.model_validate(invitation)
         raise CompanyPermissionError(
             "You don't have permission to decline this invitation"
         )
