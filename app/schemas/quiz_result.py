@@ -12,9 +12,7 @@ class QuizResultCreate(BaseModel):
     total_answers: int
     score: float
 
-    model_config = {
-        'from_attributes': True
-    }
+    model_config = {"from_attributes": True}
 
 
 class QuizResultResponse(QuizResultCreate):
