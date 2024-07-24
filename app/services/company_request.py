@@ -1,3 +1,5 @@
+from sqlalchemy import RowMapping
+
 from app.core.exceptions import CompanyPermissionError, RequestNotFound
 from app.schemas.company_request import (
     CompanyRequestCreate,
@@ -38,7 +40,7 @@ class CompanyRequestService:
     @staticmethod
     async def accept_request(
         uow: IUnitOfWork, request_id: int, current_user_id: int
-    ) -> None:
+    ) -> RowMapping:
         async with uow:
             request = await uow.company_requests.find_one(id=request_id)
             if not request:
@@ -52,20 +54,20 @@ class CompanyRequestService:
                     raise CompanyPermissionError(
                         "This user is already a member of the company"
                     )
-                await uow.company_members.add_one(
+                new_membership = await uow.company_members.add_one(
                     {
                         "user_id": request.requested_user_id,
                         "company_id": request.company_id,
                     }
                 )
                 request.status = "accepted"
-                return
+                return new_membership
         raise CompanyPermissionError("You don't have permission to accept this request")
 
     @staticmethod
     async def decline_request(
         uow: IUnitOfWork, request_id: int, current_user_id: int
-    ) -> None:
+    ) -> CompanyRequestResponse:
         async with uow:
             request = await uow.company_requests.find_one(id=request_id)
             if not request:
@@ -73,7 +75,7 @@ class CompanyRequestService:
             company = await uow.companies.find_one(id=request.company_id)
             if company and company.owner_id == current_user_id:
                 request.status = "declined"
-                return
+                return CompanyRequestResponse.model_validate(request)
         raise CompanyPermissionError(
             "You don't have permission to decline this request"
         )
