@@ -94,14 +94,15 @@ class CompanyService:
 
     async def delete_company(
         self, uow: IUnitOfWork, company_id: int, current_user_id: int
-    ) -> CompanyResponse:
+    ) -> None:
         await self.check_company_owner(uow, company_id, current_user_id)
         async with uow:
             company = await uow.companies.find_one(id=company_id)
             if not company:
                 raise CompanyNotFound(f"Company with id {company_id} not found")
+            # Delete all members and then company
+            await uow.company_members.delete_many(company_id=company_id)
             await uow.companies.delete_one(company_id)
-            return CompanyResponse.model_validate(company)
 
     @staticmethod
     async def check_company_owner(

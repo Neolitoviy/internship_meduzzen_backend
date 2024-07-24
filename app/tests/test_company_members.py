@@ -33,7 +33,7 @@ async def test_leave_company(ac: AsyncClient, uow: IUnitOfWork, current_user):
             "owner_id": current_user.id,
         }
     )
-    member = await uow.company_members.add_one(
+    await uow.company_members.add_one(
         {"company_id": company.id, "user_id": current_user.id}
     )
     await uow.commit()
