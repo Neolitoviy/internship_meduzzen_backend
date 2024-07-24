@@ -114,7 +114,7 @@ async def request_to_join_company(
 @router.post(
     "/{company_id}/invite/{user_id}",
     response_model=CompanyInvitationResponse,
-    status_code=status.HTTP_200_OK,
+    status_code=status.HTTP_201_CREATED,
 )
 async def invite_user_to_company(
     company_id: int,
@@ -127,7 +127,7 @@ async def invite_user_to_company(
     return await service.send_invitation(uow, invitation, current_user.id)
 
 
-@router.post("/{company_id}/leave", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/{company_id}/leave", status_code=status.HTTP_200_OK)
 async def leave_company(
     company_id: int,
     uow: UOWDep,
