@@ -1,6 +1,14 @@
+from typing import List
+
 from fastapi import APIRouter, Request
 
-from app.routers.dependencies import CurrentUserDep, QuizServiceDep, UOWDep
+from app.routers.dependencies import (
+    CurrentUserDep,
+    QuestionServiceDep,
+    QuizServiceDep,
+    UOWDep,
+)
+from app.schemas.question import QuestionSchemaResponse
 from app.schemas.quiz import (
     CreateQuizRequest,
     QuizSchemaResponse,
@@ -55,3 +63,17 @@ async def delete_quiz(
     quiz_id: int, uow: UOWDep, current_user: CurrentUserDep, service: QuizServiceDep
 ):
     await service.delete_quiz(uow, quiz_id, current_user.id)
+
+
+@router.get("/quiz/{quiz_id}", response_model=List[QuestionSchemaResponse])
+async def get_questions_by_quiz_id(
+    quiz_id: int,
+    uow: UOWDep,
+    current_user: CurrentUserDep,
+    service: QuestionServiceDep,
+    skip: int = 0,
+    limit: int = 10,
+):
+    return await service.get_questions_by_quiz_id(
+        uow, quiz_id, current_user.id, skip, limit
+    )
