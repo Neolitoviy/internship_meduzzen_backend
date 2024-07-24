@@ -1,6 +1,8 @@
 import pytest
 from httpx import AsyncClient
+
 from app.main import app
+
 
 @pytest.fixture
 async def client():
@@ -19,7 +21,7 @@ async def test_create_user(client: AsyncClient):
         "is_active": True,
         "is_superuser": False,
         "password1": "password",
-        "password2": "password"
+        "password2": "password",
     }
     response = await client.post("/users", json=user_data)
     assert response.status_code == 201
@@ -41,10 +43,7 @@ async def test_get_user(client: AsyncClient):
 
 async def test_update_user(client: AsyncClient):
     user_id = 1
-    update_data = {
-        "firstname": "Updated",
-        "lastname": "User"
-    }
+    update_data = {"firstname": "Updated", "lastname": "User"}
     response = await client.put(f"/users/{user_id}", json=update_data)
     assert response.status_code == 200
     assert response.json()["firstname"] == "Updated"

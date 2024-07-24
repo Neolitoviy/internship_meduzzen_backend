@@ -1,6 +1,7 @@
-from pydantic import BaseModel
-from typing import Optional, List
 from datetime import datetime
+from typing import List, Optional
+
+from pydantic import BaseModel
 
 
 class CompanyBase(BaseModel):
@@ -8,9 +9,7 @@ class CompanyBase(BaseModel):
     description: Optional[str] = None
     visibility: Optional[bool] = True
 
-    model_config = {
-        'from_attributes': True
-    }
+    model_config = {"from_attributes": True}
 
 
 class CompanyCreate(CompanyBase):
@@ -28,9 +27,7 @@ class CompanyInDB(CompanyBase):
     created_at: datetime
     updated_at: datetime
 
-    model_config = {
-        'from_attributes': True
-    }
+    model_config = {"from_attributes": True}
 
 
 class CompanyResponse(CompanyInDB):
