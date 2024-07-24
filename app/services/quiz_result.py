@@ -62,7 +62,6 @@ class QuizResultService:
                     "created_at": datetime.utcnow(),
                 }
             )
-            await uow.commit()
             return QuizResultResponse.model_validate(quiz_result)
 
     @staticmethod
