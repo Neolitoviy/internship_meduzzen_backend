@@ -1,6 +1,7 @@
-from typing import Optional, List
-from pydantic import BaseModel
 from datetime import datetime
+from typing import List, Optional
+
+from pydantic import BaseModel
 
 
 class CompanyRequestBase(BaseModel):
@@ -17,9 +18,7 @@ class CompanyRequestResponse(CompanyRequestBase):
     status: str
     created_at: datetime
 
-    model_config = {
-        'from_attributes': True
-    }
+    model_config = {"from_attributes": True}
 
 
 class PaginationLinks(BaseModel):
@@ -33,6 +32,4 @@ class CompanyRequestListResponse(BaseModel):
     pagination: PaginationLinks
     requests: List[CompanyRequestResponse]
 
-    model_config = {
-        'from_attributes': True
-    }
+    model_config = {"from_attributes": True}

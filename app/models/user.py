@@ -1,7 +1,8 @@
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, func
 from datetime import datetime
 
+from sqlalchemy import Boolean, Column, DateTime, Integer, String, func
 from sqlalchemy.orm import relationship
+
 from app.models.base import Base
 
 
@@ -22,7 +23,11 @@ class User(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     owned_companies = relationship("Company", back_populates="owner")
-    company_invitations_received = relationship("CompanyInvitation", foreign_keys="[CompanyInvitation.invited_user_id]", back_populates="invited_user")
+    company_invitations_received = relationship(
+        "CompanyInvitation",
+        foreign_keys="[CompanyInvitation.invited_user_id]",
+        back_populates="invited_user",
+    )
     company_memberships = relationship("CompanyMember", back_populates="user")
     company_requests = relationship("CompanyRequest", back_populates="requested_user")
     quizzes = relationship("Quiz", back_populates="user")
