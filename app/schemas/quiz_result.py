@@ -1,7 +1,8 @@
-from pydantic import BaseModel, Field
-from datetime import datetime
-from typing import Optional, Dict
 import time
+from datetime import datetime
+from typing import Dict, Optional
+
+from pydantic import BaseModel, Field
 
 
 class QuizResultCreate(BaseModel):
