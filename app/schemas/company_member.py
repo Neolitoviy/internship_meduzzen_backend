@@ -1,25 +1,20 @@
-from typing import Optional, List
+from datetime import datetime
+from typing import List, Optional
 
 from pydantic import BaseModel
-from datetime import datetime
 
 
 class CompanyMemberBase(BaseModel):
     company_id: int
     user_id: int
-
-
-class CompanyMemberCreate(CompanyMemberBase):
-    ...
+    is_admin: bool
 
 
 class CompanyMemberResponse(CompanyMemberBase):
     id: int
     created_at: datetime
 
-    model_config = {
-        'from_attributes': True
-    }
+    model_config = {"from_attributes": True}
 
 
 class PaginationLinks(BaseModel):
@@ -33,6 +28,4 @@ class CompanyMemberListResponse(BaseModel):
     pagination: PaginationLinks
     members: List[CompanyMemberResponse]
 
-    model_config = {
-        'from_attributes': True
-    }
+    model_config = {"from_attributes": True}

@@ -112,7 +112,7 @@ Replace `[CONTAINER ID]` with the actual ID of your container.
 pytest
 ```
 
-## Running the Application with Docker 
+## Running the Application with Docker
 
 ### 1. Build the Docker Image
 
@@ -221,7 +221,7 @@ This command will create a migrations directory with Alembic configuration files
 
 ### 4. Creating Migrations
 
-#### 1. Generate a new migration: 
+#### 1. Generate a new migration:
 
 ```bash
 alembic revision --autogenerate -m "Initial migration"
@@ -230,7 +230,7 @@ This command will generate a new migration script inside the migrations/versions
 
 ### 5. Applying Migrations
 
-#### 1. Apply the migrations: 
+#### 1. Apply the migrations:
 
 ```bash
 alembic upgrade head
@@ -252,3 +252,22 @@ Replace <revision> with the desired revision identifier from one of the generate
 docker-compose exec web alembic upgrade head
 ```
 
+## Linting commands
+
+### 1. Run Black to format code:
+
+```bash
+poetry run black .
+```
+
+### 2. Run Isort to sort imports:
+
+```bash
+poetry run isort .
+```
+
+### 3. Run Flake8 to check for style violations:
+
+```bash
+poetry run flake8 .
+```
