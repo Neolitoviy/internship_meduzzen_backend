@@ -6,11 +6,11 @@ from app.repositories.company import CompanyRepository
 from app.repositories.company_invitation import CompanyInvitationRepository
 from app.repositories.company_member import CompanyMemberRepository
 from app.repositories.company_request import CompanyRequestRepository
+from app.repositories.notification import NotificationRepository
 from app.repositories.question import QuestionRepository
 from app.repositories.quiz import QuizRepository
 from app.repositories.quiz_result import QuizResultRepository
 from app.repositories.user import UserRepository
-from app.repositories.notification import NotificationRepository
 
 
 class IUnitOfWork(ABC):

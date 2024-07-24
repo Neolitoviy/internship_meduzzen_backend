@@ -1,4 +1,5 @@
 from datetime import datetime
+
 from pydantic import BaseModel
 
 
@@ -21,6 +22,4 @@ class NotificationResponse(NotificationBase):
     status: str
     timestamp: datetime
 
-    model_config = {
-        'from_attributes': True
-    }
+    model_config = {"from_attributes": True}

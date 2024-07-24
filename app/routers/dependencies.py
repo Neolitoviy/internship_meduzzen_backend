@@ -77,4 +77,6 @@ QuizServiceDep = Annotated[QuizService, Depends(get_quiz_service)]
 QuestionServiceDep = Annotated[QuestionService, Depends(get_question_service)]
 AnswerServiceDep = Annotated[AnswerService, Depends(get_answer_service)]
 QuizResultServiceDep = Annotated[QuizResultService, Depends(get_quiz_result_service)]
-NotificationServiceDep = Annotated[NotificationService, Depends(get_notification_service)]
+NotificationServiceDep = Annotated[
+    NotificationService, Depends(get_notification_service)
+]
