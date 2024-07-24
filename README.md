@@ -271,3 +271,36 @@ poetry run isort .
 ```bash
 poetry run flake8 .
 ```
+
+## Celery
+
+### 1. Start Redis server.
+
+### 2. Start Celery worker:
+
+```bash
+celery -A app.celery:celery worker --loglevel=INFO
+```
+
+### 3. Start Celery worker(Windows):
+
+```bash
+celery -A app.celery:celery worker --loglevel=INFO --pool=solo
+```
+
+### 4. Start Celery beat (scheduler):
+
+```bash
+celery -A app.celery:celery worker --loglevel=INFO
+```
+
+### 5. Start Flower (Celery monitoring tool):
+
+```bash
+poetry run celery -A app.celery:celery flower --port=5555
+```
+It will be at:
+
+```http
+http://127.0.0.1:5555
+```
