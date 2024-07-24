@@ -1,6 +1,7 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, status
 
 from app.routers.dependencies import CompanyRequestServiceDep, CurrentUserDep, UOWDep
+from app.schemas.company_member import CompanyMemberResponse
 
 router = APIRouter(
     prefix="/request",
@@ -18,7 +19,11 @@ async def cancel_request(
     return await service.cancel_request(uow, request_id, current_user.id)
 
 
-@router.post("/{request_id}/accept", status_code=204)
+@router.post(
+    "/{request_id}/accept",
+    response_model=CompanyMemberResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def accept_request(
     request_id: int,
     uow: UOWDep,
