@@ -1,8 +1,17 @@
-from fastapi import APIRouter, Request
-from app.routers.dependencies import UOWDep, UserServiceDep, CurrentUserDep
-from app.schemas.user import UserCreate, UserUpdate, UserResponse, UserListResponse, UserCreateInput, UserUpdateInput
 import logging
+
+from fastapi import APIRouter, Request
+
 from app.core.logging_config import logging_config
+from app.routers.dependencies import CurrentUserDep, UOWDep, UserServiceDep
+from app.schemas.user import (
+    UserCreate,
+    UserCreateInput,
+    UserListResponse,
+    UserResponse,
+    UserUpdate,
+    UserUpdateInput,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +27,13 @@ async def create_user(user: UserCreateInput, uow: UOWDep, user_service: UserServ
 
 
 @router.get("/", response_model=UserListResponse)
-async def get_users(request: Request, uow: UOWDep, user_service: UserServiceDep, skip: int = 0, limit: int = 10):
+async def get_users(
+    request: Request,
+    uow: UOWDep,
+    user_service: UserServiceDep,
+    skip: int = 0,
+    limit: int = 10,
+):
     return await user_service.get_users(uow, skip, limit, str(request.url))
 
 
@@ -28,10 +43,23 @@ async def get_user(user_id: int, uow: UOWDep, user_service: UserServiceDep):
 
 
 @router.put("/{user_id}", response_model=UserResponse)
-async def update_user(user_id: int, user: UserUpdateInput, uow: UOWDep, user_service: UserServiceDep, current_user: CurrentUserDep):
-    return await user_service.update_user(uow, user_id, UserUpdate.model_validate(user), current_user.id)
+async def update_user(
+    user_id: int,
+    user: UserUpdateInput,
+    uow: UOWDep,
+    user_service: UserServiceDep,
+    current_user: CurrentUserDep,
+):
+    return await user_service.update_user(
+        uow, user_id, UserUpdate.model_validate(user), current_user.id
+    )
 
 
 @router.delete("/{user_id}", response_model=UserResponse)
-async def delete_user(user_id: int, uow: UOWDep, user_service: UserServiceDep, current_user: CurrentUserDep):
+async def delete_user(
+    user_id: int,
+    uow: UOWDep,
+    user_service: UserServiceDep,
+    current_user: CurrentUserDep,
+):
     return await user_service.delete_user(uow, user_id, current_user.id)

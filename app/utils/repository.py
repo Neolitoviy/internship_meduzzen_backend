@@ -1,6 +1,7 @@
-from sqlalchemy import insert, select, update, delete, RowMapping, func, or_
-from sqlalchemy.ext.asyncio import AsyncSession
 from abc import ABC, abstractmethod
+
+from sqlalchemy import RowMapping, delete, func, insert, select, update
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class AbstractRepository(ABC):
@@ -36,7 +37,9 @@ class SQLAlchemyRepository(AbstractRepository):
         self.session = session
 
     async def add_one(self, data: dict) -> RowMapping:
-        stmt = insert(self.model).values(**data).returning(*self.model.__table__.columns)
+        stmt = (
+            insert(self.model).values(**data).returning(*self.model.__table__.columns)
+        )
         res = await self.session.execute(stmt)
         result = res.fetchone()
         if result is None:
@@ -44,7 +47,12 @@ class SQLAlchemyRepository(AbstractRepository):
         return result._mapping
 
     async def edit_one(self, id: int, data: dict) -> RowMapping:
-        stmt = update(self.model).values(**data).filter_by(id=id).returning(*self.model.__table__.columns)
+        stmt = (
+            update(self.model)
+            .values(**data)
+            .filter_by(id=id)
+            .returning(*self.model.__table__.columns)
+        )
         res = await self.session.execute(stmt)
         result = res.fetchone()
         if result is None:
@@ -62,7 +70,9 @@ class SQLAlchemyRepository(AbstractRepository):
         return res.scalar_one_or_none()
 
     async def delete_one(self, id: int) -> RowMapping:
-        stmt = delete(self.model).filter_by(id=id).returning(*self.model.__table__.columns)
+        stmt = (
+            delete(self.model).filter_by(id=id).returning(*self.model.__table__.columns)
+        )
         res = await self.session.execute(stmt)
         result = res.fetchone()
         if result is None:

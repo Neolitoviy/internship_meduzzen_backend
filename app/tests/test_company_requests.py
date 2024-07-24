@@ -1,14 +1,17 @@
-import pytest
 from httpx import AsyncClient
 
-from app.main import app
 from app.schemas.company_request import CompanyRequestCreate
 from app.utils.unitofwork import IUnitOfWork
 
 
 async def test_request_to_join_company(ac: AsyncClient, uow: IUnitOfWork, current_user):
     company = await uow.companies.add_one(
-        {"name": "Test Company", "description": "Test Description", "owner_id": current_user.id})
+        {
+            "name": "Test Company",
+            "description": "Test Description",
+            "owner_id": current_user.id,
+        }
+    )
     await uow.commit()
 
     request_data = CompanyRequestCreate(company_id=company.id)
@@ -29,8 +32,15 @@ async def test_get_requests(ac: AsyncClient, uow: IUnitOfWork, current_user):
 
 async def test_cancel_request(ac: AsyncClient, uow: IUnitOfWork, current_user):
     company = await uow.companies.add_one(
-        {"name": "Test Company", "description": "Test Description", "owner_id": current_user.id})
-    request = await uow.company_requests.add_one({"company_id": company.id, "requested_user_id": current_user.id})
+        {
+            "name": "Test Company",
+            "description": "Test Description",
+            "owner_id": current_user.id,
+        }
+    )
+    request = await uow.company_requests.add_one(
+        {"company_id": company.id, "requested_user_id": current_user.id}
+    )
     await uow.commit()
 
     response = await ac.delete(f"/company_requests/{request.id}")
@@ -39,8 +49,15 @@ async def test_cancel_request(ac: AsyncClient, uow: IUnitOfWork, current_user):
 
 async def test_accept_request(ac: AsyncClient, uow: IUnitOfWork, current_user):
     company = await uow.companies.add_one(
-        {"name": "Test Company", "description": "Test Description", "owner_id": current_user.id})
-    request = await uow.company_requests.add_one({"company_id": company.id, "requested_user_id": current_user.id})
+        {
+            "name": "Test Company",
+            "description": "Test Description",
+            "owner_id": current_user.id,
+        }
+    )
+    request = await uow.company_requests.add_one(
+        {"company_id": company.id, "requested_user_id": current_user.id}
+    )
     await uow.commit()
 
     response = await ac.post(f"/company_requests/{request.id}/accept")
@@ -52,8 +69,15 @@ async def test_accept_request(ac: AsyncClient, uow: IUnitOfWork, current_user):
 
 async def test_decline_request(ac: AsyncClient, uow: IUnitOfWork, current_user):
     company = await uow.companies.add_one(
-        {"name": "Test Company", "description": "Test Description", "owner_id": current_user.id})
-    request = await uow.company_requests.add_one({"company_id": company.id, "requested_user_id": current_user.id})
+        {
+            "name": "Test Company",
+            "description": "Test Description",
+            "owner_id": current_user.id,
+        }
+    )
+    request = await uow.company_requests.add_one(
+        {"company_id": company.id, "requested_user_id": current_user.id}
+    )
     await uow.commit()
 
     response = await ac.post(f"/company_requests/{request.id}/decline")
