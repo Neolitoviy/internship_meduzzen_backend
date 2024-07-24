@@ -1,11 +1,9 @@
 from typing import List
 
-from fastapi import APIRouter
 from fastapi import APIRouter, status
 
 from app.routers.dependencies import CurrentUserDep, QuizResultServiceDep, UOWDep
 from app.schemas.quiz_result import QuizResultResponse, QuizVoteRequest, UserQuizVote
-from app.schemas.quiz_result import QuizResultResponse, QuizVoteRequest
 
 router = APIRouter(
     prefix="/quiz_result",
