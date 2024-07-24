@@ -1,15 +1,14 @@
 import pytest
-from app.services.answer import AnswerService
-from app.schemas.answer import AnswerSchemaCreate, AnswerSchemaResponse
-from app.utils.unitofwork import IUnitOfWork
+
 from app.core.exceptions import PermissionDenied
+from app.schemas.answer import AnswerSchemaCreate, AnswerSchemaResponse
+from app.services.answer import AnswerService
+from app.utils.unitofwork import IUnitOfWork
 
 
 async def test_create_answer(uow: IUnitOfWork, current_user_id: int):
     answer_data = AnswerSchemaCreate(
-        question_id=1,
-        answer_text="Answer 1",
-        is_correct=True
+        question_id=1, answer_text="Answer 1", is_correct=True
     )
 
     service = AnswerService()
@@ -27,16 +26,16 @@ async def test_get_answers_by_question_id(uow: IUnitOfWork, current_user_id: int
     skip = 0
     limit = 10
 
-    answers_response = await service.get_answers_by_question_id(uow, question_id, current_user_id, skip, limit)
+    answers_response = await service.get_answers_by_question_id(
+        uow, question_id, current_user_id, skip, limit
+    )
 
     assert len(answers_response) > 0
 
 
 async def test_permission_denied_create_answer(uow: IUnitOfWork, current_user_id: int):
     answer_data = AnswerSchemaCreate(
-        question_id=1,
-        answer_text="Answer 1",
-        is_correct=True
+        question_id=1, answer_text="Answer 1", is_correct=True
     )
 
     service = AnswerService()

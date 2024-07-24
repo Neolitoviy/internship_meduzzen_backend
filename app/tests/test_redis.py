@@ -13,7 +13,9 @@ async def test_redis_connection():
 
 @pytest.mark.asyncio
 async def test_redis_set_get():
-    connection = await asyncio_redis.Connection.create(host=settings.redis_host, port=settings.redis_port)
+    connection = await asyncio_redis.Connection.create(
+        host=settings.redis_host, port=settings.redis_port
+    )
     await connection.set("test_key", "test_value")
     value = await connection.get("test_key")
     await connection.delete(["test_key"])
@@ -23,7 +25,9 @@ async def test_redis_set_get():
 
 @pytest.mark.asyncio
 async def test_redis_delete():
-    connection = await asyncio_redis.Connection.create(host=settings.redis_host, port=settings.redis_port)
+    connection = await asyncio_redis.Connection.create(
+        host=settings.redis_host, port=settings.redis_port
+    )
     await connection.set("test_key", "test_value")
     await connection.delete(["test_key"])
     value = await connection.get("test_key")
