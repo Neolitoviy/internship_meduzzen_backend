@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, status
 
 from app.core.logging_config import logging_config
 from app.routers.dependencies import (
@@ -32,7 +32,7 @@ router = APIRouter(
 )
 
 
-@router.post("/", response_model=CompanyResponse)
+@router.post("/", response_model=CompanyResponse, status_code=status.HTTP_201_CREATED)
 async def create_company(
     company: CompanyCreate,
     uow: UOWDep,
@@ -42,7 +42,7 @@ async def create_company(
     return await company_service.create_company(uow, company, current_user.id)
 
 
-@router.get("/", response_model=CompanyListResponse)
+@router.get("/", response_model=CompanyListResponse, status_code=status.HTTP_200_OK)
 async def get_companies(
     request: Request,
     uow: UOWDep,
@@ -56,7 +56,9 @@ async def get_companies(
     )
 
 
-@router.get("/{company_id}", response_model=CompanyResponse)
+@router.get(
+    "/{company_id}", response_model=CompanyResponse, status_code=status.HTTP_200_OK
+)
 async def get_company(
     company_id: int,
     uow: UOWDep,
@@ -66,7 +68,9 @@ async def get_company(
     return await company_service.get_company_by_id(uow, company_id, current_user.id)
 
 
-@router.put("/{company_id}", response_model=CompanyResponse)
+@router.put(
+    "/{company_id}", response_model=CompanyResponse, status_code=status.HTTP_200_OK
+)
 async def update_company(
     company_id: int,
     company: CompanyUpdate,
@@ -79,7 +83,11 @@ async def update_company(
     )
 
 
-@router.delete("/{company_id}", response_model=CompanyResponse)
+@router.delete(
+    "/{company_id}",
+    response_model=CompanyResponse,
+    status_code=status.HTTP_204_NO_CONTENT,
+)
 async def delete_company(
     company_id: int,
     uow: UOWDep,
@@ -89,7 +97,11 @@ async def delete_company(
     return await company_service.delete_company(uow, company_id, current_user.id)
 
 
-@router.post("/{company_id}/join", response_model=CompanyRequestResponse)
+@router.post(
+    "/{company_id}/join",
+    response_model=CompanyRequestResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def request_to_join_company(
     company_id: int,
     uow: UOWDep,
@@ -100,7 +112,11 @@ async def request_to_join_company(
     return await service.request_to_join_company(uow, request, current_user.id)
 
 
-@router.post("/{company_id}/invite/{user_id}", response_model=CompanyInvitationResponse)
+@router.post(
+    "/{company_id}/invite/{user_id}",
+    response_model=CompanyInvitationResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def invite_user_to_company(
     company_id: int,
     user_id: int,
@@ -112,7 +128,7 @@ async def invite_user_to_company(
     return await service.send_invitation(uow, invitation, current_user.id)
 
 
-@router.post("/{company_id}/leave", status_code=204)
+@router.post("/{company_id}/leave", status_code=status.HTTP_204_NO_CONTENT)
 async def leave_company(
     company_id: int,
     uow: UOWDep,
@@ -122,7 +138,11 @@ async def leave_company(
     return await service.leave_company(uow, company_id, current_user.id)
 
 
-@router.get("/{company_id}/members", response_model=CompanyMemberListResponse)
+@router.get(
+    "/{company_id}/members",
+    response_model=CompanyMemberListResponse,
+    status_code=status.HTTP_200_OK,
+)
 async def get_memberships_by_company_id(
     request: Request,
     uow: UOWDep,
@@ -137,7 +157,7 @@ async def get_memberships_by_company_id(
     )
 
 
-@router.delete("/members/{member_id}", status_code=204)
+@router.delete("/members/{member_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def remove_member(
     member_id: int,
     uow: UOWDep,
@@ -147,7 +167,9 @@ async def remove_member(
     return await service.remove_member(uow, member_id, current_user.id)
 
 
-@router.post("/{company_id}/admin/{user_id}/appoint", status_code=204)
+@router.post(
+    "/{company_id}/admin/{user_id}/appoint", status_code=status.HTTP_204_NO_CONTENT
+)
 async def appoint_admin(
     company_id: int,
     user_id: int,
@@ -158,7 +180,9 @@ async def appoint_admin(
     return await service.appoint_admin(uow, company_id, user_id, current_user.id)
 
 
-@router.post("/{company_id}/admin/{user_id}/remove", status_code=204)
+@router.post(
+    "/{company_id}/admin/{user_id}/remove", status_code=status.HTTP_204_NO_CONTENT
+)
 async def remove_admin(
     company_id: int,
     user_id: int,
@@ -169,7 +193,11 @@ async def remove_admin(
     return await service.remove_admin(uow, company_id, user_id, current_user.id)
 
 
-@router.get("/{company_id}/admins", response_model=CompanyMemberListResponse)
+@router.get(
+    "/{company_id}/admins",
+    response_model=CompanyMemberListResponse,
+    status_code=status.HTTP_200_OK,
+)
 async def get_admins(
     request: Request,
     uow: UOWDep,
