@@ -1,6 +1,4 @@
-import json
 from datetime import datetime
-from typing import Any, Dict, List
 from typing import List
 
 from fastapi import APIRouter, Response, status
@@ -52,8 +50,6 @@ async def get_user_average_score(
     )
 
 
-@router.get("/average_score/company/{company_id}", response_model=float)
-async def get_company_average_score(
 @router.get(
     "/quiz_results/average_score/user/{user_id}/company/{company_id}",
     response_model=float,
