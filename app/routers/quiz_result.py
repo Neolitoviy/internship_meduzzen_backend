@@ -66,7 +66,9 @@ async def get_user_company_average_score(
     )
 
 
-@router.get("/user/quiz_scores", response_model=List[QuizScore])
+@router.get(
+    "/user/quiz_scores", response_model=List[QuizScore], status_code=status.HTTP_200_OK
+)
 async def get_user_quiz_scores(
     current_user: CurrentUserDep,
     uow: UOWDep,
@@ -77,7 +79,11 @@ async def get_user_quiz_scores(
     return await service.get_user_quiz_scores(uow, current_user.id, skip, limit)
 
 
-@router.get("/user/last_quiz_attempts", response_model=List[LastQuizAttempt])
+@router.get(
+    "/user/last_quiz_attempts",
+    response_model=List[LastQuizAttempt],
+    status_code=status.HTTP_200_OK,
+)
 async def get_user_last_quiz_attempts(
     current_user: CurrentUserDep,
     uow: UOWDep,
@@ -91,6 +97,7 @@ async def get_user_last_quiz_attempts(
 @router.get(
     "/company/{company_id}/member_average_scores",
     response_model=List[CompanyMemberAverageScore],
+    status_code=status.HTTP_200_OK,
 )
 async def get_company_members_average_scores(
     company_id: int,
@@ -108,7 +115,9 @@ async def get_company_members_average_scores(
 
 
 @router.get(
-    "/company/{company_id}/user/{user_id}/quiz_trends", response_model=List[QuizTrend]
+    "/company/{company_id}/user/{user_id}/quiz_trends",
+    response_model=List[QuizTrend],
+    status_code=status.HTTP_200_OK,
 )
 async def get_user_quiz_trends(
     company_id: int,
@@ -129,6 +138,7 @@ async def get_user_quiz_trends(
 @router.get(
     "/company/{company_id}/user_last_attempts",
     response_model=List[CompanyUserLastAttempt],
+    status_code=status.HTTP_200_OK,
 )
 async def get_company_user_last_attempts(
     company_id: int,
