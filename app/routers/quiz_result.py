@@ -1,8 +1,6 @@
-import json
 from typing import List
 
-from fastapi import APIRouter, Response
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Response, status
 
 from app.routers.dependencies import CurrentUserDep, QuizResultServiceDep, UOWDep
 from app.schemas.quiz_result import QuizResultResponse, QuizVoteRequest, UserQuizVote
@@ -56,7 +54,7 @@ async def get_company_average_score(
     )
 
 
-@router.get("/get_vote_redis")
+@router.get("/get_vote_redis", status_code=status.HTTP_200_OK)
 async def get_vote_redis(
     user_id: int,
     company_id: int,
@@ -71,7 +69,11 @@ async def get_vote_redis(
     )
 
 
-@router.get("/get_quiz_votes_redis", response_model=List[UserQuizVote])
+@router.get(
+    "/get_quiz_votes_redis",
+    response_model=List[UserQuizVote],
+    status_code=status.HTTP_200_OK,
+)
 async def get_quiz_votes_redis(
     user_id: int,
     company_id: int,
@@ -85,7 +87,9 @@ async def get_quiz_votes_redis(
     )
 
 
-@router.get("/export_quiz_results/{company_id}/{quiz_id}/csv")
+@router.get(
+    "/export_quiz_results/{company_id}/{quiz_id}/csv", status_code=status.HTTP_200_OK
+)
 async def export_quiz_results_to_csv(
     user_id: int,
     company_id: int,
@@ -107,6 +111,7 @@ async def export_quiz_results_to_csv(
 @router.get(
     "/export_quiz_results/{company_id}/{quiz_id}/json",
     response_model=List[UserQuizVote],
+    status_code=status.HTTP_200_OK,
 )
 async def export_quiz_results_to_json(
     user_id: int,
