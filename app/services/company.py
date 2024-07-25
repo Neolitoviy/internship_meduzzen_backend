@@ -1,4 +1,4 @@
-from app.core.exceptions import CompanyNotFound, CompanyPermissionError
+from app.core.exceptions import CompanyPermissionError
 from app.schemas.company import (
     CompanyCreate,
     CompanyListResponse,
@@ -73,9 +73,8 @@ class CompanyService:
     ) -> CompanyResponse:
         async with uow:
             company = await uow.companies.find_one(id=company_id)
-            if company and (company.owner_id == current_user_id or company.visibility):
+            if company.owner_id == current_user_id or company.visibility:
                 return CompanyResponse.model_validate(company)
-            raise CompanyNotFound(f"Company with id {company_id} not found")
 
     async def update_company(
         self,
@@ -88,8 +87,6 @@ class CompanyService:
         company_dict = company.model_dump(exclude_unset=True)
         async with uow:
             updated_company = await uow.companies.edit_one(company_id, company_dict)
-            if not updated_company:
-                raise CompanyNotFound(f"Company with id {company_id} not found")
             return CompanyResponse.model_validate(updated_company)
 
     async def delete_company(
@@ -97,9 +94,6 @@ class CompanyService:
     ) -> None:
         await self.check_company_owner(uow, company_id, current_user_id)
         async with uow:
-            company = await uow.companies.find_one(id=company_id)
-            if not company:
-                raise CompanyNotFound(f"Company with id {company_id} not found")
             # Delete all members and then company
             await uow.company_members.delete_many(company_id=company_id)
             await uow.companies.delete_one(company_id)
@@ -110,7 +104,20 @@ class CompanyService:
     ) -> None:
         async with uow:
             company = await uow.companies.find_one(id=company_id)
-            if not company or company.owner_id != current_user_id:
+            if company.owner_id != current_user_id:
                 raise CompanyPermissionError(
-                    "You don't have permission to modify this company"
+                    "You don't have permission to this company"
                 )
+
+    @staticmethod
+    async def check_company_permission(
+        uow: IUnitOfWork, company_id: int, current_user_id: int, is_admin: bool = False
+    ) -> None:
+        filters = {"company_id": company_id, "user_id": current_user_id}
+        if is_admin:
+            filters["is_admin"] = True
+
+        if not await uow.company_members.find_one_or_none(**filters):
+            raise CompanyPermissionError(
+                "You do not have permission to perform this action in this company."
+            )

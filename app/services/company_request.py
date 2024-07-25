@@ -1,12 +1,14 @@
 from sqlalchemy import RowMapping
 
-from app.core.exceptions import CompanyPermissionError, RequestNotFound
 from app.schemas.company_request import (
     CompanyRequestCreate,
     CompanyRequestListResponse,
     CompanyRequestResponse,
     PaginationLinks,
 )
+from app.services.company import CompanyService
+from app.services.company_invitation import CompanyInvitationService
+from app.services.user import UserService
 from app.utils.unitofwork import IUnitOfWork
 
 
@@ -18,11 +20,6 @@ class CompanyRequestService:
         request_dict = request.model_dump()
         request_dict["requested_user_id"] = current_user_id
         async with uow:
-            company = await uow.companies.find_one(id=request.company_id)
-            if company.owner_id == current_user_id:
-                raise CompanyPermissionError(
-                    "You cannot request to join your own company."
-                )
             new_request = await uow.company_requests.add_one(request_dict)
             return CompanyRequestResponse.model_validate(new_request)
 
@@ -32,10 +29,10 @@ class CompanyRequestService:
     ) -> None:
         async with uow:
             request = await uow.company_requests.find_one(id=request_id)
-            if request and request.requested_user_id == current_user_id:
-                await uow.company_requests.delete_one(request_id)
-                return
-        raise CompanyPermissionError("You don't have permission to cancel this request")
+            await UserService.check_user_permission(
+                request.requested_user_id, current_user_id
+            )
+            await uow.company_requests.delete_one(request_id)
 
     @staticmethod
     async def accept_request(
@@ -43,26 +40,20 @@ class CompanyRequestService:
     ) -> RowMapping:
         async with uow:
             request = await uow.company_requests.find_one(id=request_id)
-            if not request:
-                raise RequestNotFound("Request not found")
-            company = await uow.companies.find_one(id=request.company_id)
-            if company and company.owner_id == current_user_id:
-                if await uow.company_members.find_one(
-                    company_id=request.company_id,
-                    user_id=request.requested_user_id,
-                ):
-                    raise CompanyPermissionError(
-                        "This user is already a member of the company"
-                    )
-                new_membership = await uow.company_members.add_one(
-                    {
-                        "user_id": request.requested_user_id,
-                        "company_id": request.company_id,
-                    }
-                )
-                request.status = "accepted"
-                return new_membership
-        raise CompanyPermissionError("You don't have permission to accept this request")
+            await CompanyService.check_company_owner(
+                uow, request.company_id, current_user_id
+            )
+            await CompanyInvitationService.check_already_member(
+                uow, request.company_id, request.requested_user_id
+            )
+            new_membership = await uow.company_members.add_one(
+                {
+                    "user_id": request.requested_user_id,
+                    "company_id": request.company_id,
+                }
+            )
+            request.status = "accepted"
+            return new_membership
 
     @staticmethod
     async def decline_request(
@@ -70,15 +61,11 @@ class CompanyRequestService:
     ) -> CompanyRequestResponse:
         async with uow:
             request = await uow.company_requests.find_one(id=request_id)
-            if not request:
-                raise RequestNotFound("Request not found")
-            company = await uow.companies.find_one(id=request.company_id)
-            if company and company.owner_id == current_user_id:
-                request.status = "declined"
-                return CompanyRequestResponse.model_validate(request)
-        raise CompanyPermissionError(
-            "You don't have permission to decline this request"
-        )
+            await CompanyService.check_company_owner(
+                uow, request.company_id, current_user_id
+            )
+            request.status = "declined"
+            return CompanyRequestResponse.model_validate(request)
 
     @staticmethod
     async def get_requests_by_user_id(

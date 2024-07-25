@@ -36,8 +36,7 @@ class UserService:
     async def create_user(uow: IUnitOfWork, user: UserCreate) -> UserResponse:
         user_dict = user.model_dump()
         async with uow:
-            existing_user = await uow.users.find_one(email=user_dict["email"])
-            if existing_user:
+            if await uow.users.find_one(email=user_dict["email"]):
                 raise EmailAlreadyExists(
                     f"User with email {user_dict['email']} already exists"
                 )
@@ -79,42 +78,29 @@ class UserService:
     async def get_user_by_id(uow: IUnitOfWork, user_id: int) -> UserResponse:
         async with uow:
             user = await uow.users.find_one(id=user_id)
-            if not user:
-                raise UserNotFound(f"User with id {user_id} not found")
             return UserResponse.model_validate(user)
 
     @staticmethod
     async def get_user_by_email(uow: IUnitOfWork, email: str) -> UserInDB:
         async with uow:
             user = await uow.users.find_one(email=email)
-            if not user:
-                raise UserNotFound(f"User with email {email} not found")
             return UserInDB.model_validate(user)
 
+    @staticmethod
     async def update_user(
-        self,
         uow: IUnitOfWork,
-        user_id: int,
         user: UserUpdate,
         current_user_id: int,
     ) -> UserResponse:
-        await self.check_user_permission(user_id, current_user_id)
         user_dict = user.model_dump(exclude_unset=True)
         async with uow:
-            updated_user = await uow.users.edit_one(user_id, user_dict)
-            if not updated_user:
-                raise UserNotFound(f"User with id {user_id} not found")
+            updated_user = await uow.users.edit_one(current_user_id, user_dict)
             return UserResponse.model_validate(updated_user)
 
-    async def delete_user(
-        self, uow: IUnitOfWork, user_id: int, current_user_id: int
-    ) -> None:
-        await self.check_user_permission(user_id, current_user_id)
+    @staticmethod
+    async def delete_user(uow: IUnitOfWork, current_user_id: int) -> None:
         async with uow:
-            user = await uow.users.find_one(id=user_id)
-            if not user:
-                raise UserNotFound(f"User with id {user_id} not found")
-            await uow.users.edit_one(user_id, {"is_active": False})
+            await uow.users.edit_one(current_user_id, {"is_active": False})
 
     @staticmethod
     async def authenticate_user(
@@ -122,8 +108,6 @@ class UserService:
     ) -> Optional[Token]:
         async with uow:
             user = await uow.users.find_one(email=email)
-            if user is None:
-                raise UserNotFound("Invalid email or password")
             if not user.is_active:
                 raise UserNotFound("Account is deactivated")
             if not Hasher.verify_password(password, user.hashed_password):
@@ -156,7 +140,7 @@ class UserService:
     ) -> UserInDB:
         current_email = await UserService.get_email_from_token(token)
         async with uow:
-            user = await uow.users.find_one(email=current_email)
+            user = await uow.users.find_one_or_none(email=current_email)
             if user is None and current_email is None:
                 raise BadRequest("Invalid token")
             if not user:

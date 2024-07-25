@@ -1,4 +1,3 @@
-from app.core.exceptions import CompanyPermissionError, QuizNotFound
 from app.schemas.quiz import (
     CreateQuizRequest,
     PaginationLinks,
@@ -6,6 +5,7 @@ from app.schemas.quiz import (
     QuizzesListResponse,
     UpdateQuizRequest,
 )
+from app.services.company import CompanyService
 from app.utils.unitofwork import IUnitOfWork
 
 
@@ -15,18 +15,9 @@ class QuizService:
         uow: IUnitOfWork, quiz_data: CreateQuizRequest, current_user_id: int
     ) -> QuizSchemaResponse:
         async with uow:
-            company = await uow.companies.find_one(id=quiz_data.company_id)
-            if not company or (
-                company.owner_id != current_user_id
-                and not await uow.company_members.find_one(
-                    company_id=quiz_data.company_id,
-                    user_id=current_user_id,
-                    is_admin=True,
-                )
-            ):
-                raise CompanyPermissionError(
-                    "You do not have permission to create quizzes in this company."
-                )
+            await CompanyService.check_company_permission(
+                uow, quiz_data.company_id, current_user_id, is_admin=True
+            )
 
             new_quiz = await uow.quizzes.add_one(
                 {
@@ -67,11 +58,9 @@ class QuizService:
         request_url: str,
     ) -> QuizzesListResponse:
         async with uow:
-            company = await uow.companies.find_one(id=company_id)
-            if not company or company.owner_id != current_user_id:
-                raise CompanyPermissionError(
-                    "You don't have permission to view this company's quizzes."
-                )
+            await CompanyService.check_company_permission(
+                uow, company_id, current_user_id
+            )
 
             total_quizzes = await uow.quizzes.count_all(company_id=company_id)
             quizzes = await uow.quizzes.find_all(
@@ -111,23 +100,17 @@ class QuizService:
     ) -> QuizSchemaResponse:
         async with uow:
             quiz = await uow.quizzes.find_one(id=quiz_id)
-            if not quiz:
-                raise QuizNotFound(f"Quiz with id {quiz_id} not found")
-            if quiz.user_id != current_user_id:
-                raise CompanyPermissionError(
-                    "You don't have permission to update this quiz."
-                )
-            updated_quiz = await uow.quizzes.edit_one(quiz_id, update_data.dict())
+            await CompanyService.check_company_permission(
+                uow, quiz.company_id, current_user_id, is_admin=True
+            )
+            updated_quiz = await uow.quizzes.edit_one(quiz_id, update_data.model_dump())
             return QuizSchemaResponse.model_validate(updated_quiz)
 
     @staticmethod
     async def delete_quiz(uow: IUnitOfWork, quiz_id: int, current_user_id: int) -> None:
         async with uow:
             quiz = await uow.quizzes.find_one(id=quiz_id)
-            if not quiz:
-                raise QuizNotFound(f"Quiz with id {quiz_id} not found")
-            if quiz.user_id != current_user_id:
-                raise CompanyPermissionError(
-                    "You don't have permission to delete this quiz."
-                )
+            await CompanyService.check_company_permission(
+                uow, quiz.company_id, current_user_id, is_admin=True
+            )
             await uow.quizzes.delete_one(quiz_id)
