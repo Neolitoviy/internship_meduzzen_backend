@@ -140,7 +140,9 @@ def register_exception_handlers(app: FastAPI):
         )
 
     @app.exception_handler(NotificationNotFound)
-    async def notification_not_found_handler(request: Request, exc: NotificationNotFound):
+    async def notification_not_found_handler(
+        request: Request, exc: NotificationNotFound
+    ):
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND, content={"detail": exc.message}
         )
