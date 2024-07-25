@@ -2,6 +2,7 @@ import json
 from typing import List
 
 from fastapi import APIRouter, Response
+from fastapi import APIRouter, status
 
 from app.routers.dependencies import CurrentUserDep, QuizResultServiceDep, UOWDep
 from app.schemas.quiz_result import QuizResultResponse, QuizVoteRequest, UserQuizVote
@@ -13,7 +14,9 @@ router = APIRouter(
 
 
 @router.post(
-    "/quiz_results/vote/{company_id}/{quiz_id}", response_model=QuizResultResponse
+    "/vote/{company_id}/{quiz_id}",
+    response_model=QuizResultResponse,
+    status_code=status.HTTP_201_CREATED,
 )
 async def quiz_vote(
     company_id: int,
@@ -28,7 +31,7 @@ async def quiz_vote(
     )
 
 
-@router.get("/quiz_results/average_score/user/{user_id}", response_model=float)
+@router.get("/average_score/user/{user_id}", response_model=float)
 async def get_user_average_score(
     user_id: int,
     company_id: int,
@@ -41,7 +44,7 @@ async def get_user_average_score(
     )
 
 
-@router.get("/quiz_results/average_score/company/{company_id}", response_model=float)
+@router.get("/average_score/company/{company_id}", response_model=float)
 async def get_company_average_score(
     company_id: int,
     uow: UOWDep,
