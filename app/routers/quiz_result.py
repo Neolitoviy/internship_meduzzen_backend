@@ -1,8 +1,7 @@
-import json
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import List
 
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, Response, status
 
 from app.routers.dependencies import CurrentUserDep, QuizResultServiceDep, UOWDep
 from app.schemas.analytics import (
@@ -21,7 +20,9 @@ router = APIRouter(
 
 
 @router.post(
-    "/quiz_results/vote/{company_id}/{quiz_id}", response_model=QuizResultResponse
+    "/vote/{company_id}/{quiz_id}",
+    response_model=QuizResultResponse,
+    status_code=status.HTTP_201_CREATED,
 )
 async def quiz_vote(
     company_id: int,
@@ -36,7 +37,7 @@ async def quiz_vote(
     )
 
 
-@router.get("/quiz_results/average_score/user/{user_id}", response_model=float)
+@router.get("/average_score/user/{user_id}", response_model=float)
 async def get_user_average_score(
     user_id: int,
     company_id: int,
@@ -65,7 +66,9 @@ async def get_user_company_average_score(
     )
 
 
-@router.get("/user/quiz_scores", response_model=List[QuizScore])
+@router.get(
+    "/user/quiz_scores", response_model=List[QuizScore], status_code=status.HTTP_200_OK
+)
 async def get_user_quiz_scores(
     current_user: CurrentUserDep,
     uow: UOWDep,
@@ -76,7 +79,11 @@ async def get_user_quiz_scores(
     return await service.get_user_quiz_scores(uow, current_user.id, skip, limit)
 
 
-@router.get("/user/last_quiz_attempts", response_model=List[LastQuizAttempt])
+@router.get(
+    "/user/last_quiz_attempts",
+    response_model=List[LastQuizAttempt],
+    status_code=status.HTTP_200_OK,
+)
 async def get_user_last_quiz_attempts(
     current_user: CurrentUserDep,
     uow: UOWDep,
@@ -90,6 +97,7 @@ async def get_user_last_quiz_attempts(
 @router.get(
     "/company/{company_id}/member_average_scores",
     response_model=List[CompanyMemberAverageScore],
+    status_code=status.HTTP_200_OK,
 )
 async def get_company_members_average_scores(
     company_id: int,
@@ -107,7 +115,9 @@ async def get_company_members_average_scores(
 
 
 @router.get(
-    "/company/{company_id}/user/{user_id}/quiz_trends", response_model=List[QuizTrend]
+    "/company/{company_id}/user/{user_id}/quiz_trends",
+    response_model=List[QuizTrend],
+    status_code=status.HTTP_200_OK,
 )
 async def get_user_quiz_trends(
     company_id: int,
@@ -128,6 +138,7 @@ async def get_user_quiz_trends(
 @router.get(
     "/company/{company_id}/user_last_attempts",
     response_model=List[CompanyUserLastAttempt],
+    status_code=status.HTTP_200_OK,
 )
 async def get_company_user_last_attempts(
     company_id: int,
@@ -142,7 +153,7 @@ async def get_company_user_last_attempts(
     )
 
 
-@router.get("/get_vote_redis")
+@router.get("/get_vote_redis", status_code=status.HTTP_200_OK)
 async def get_vote_redis(
     user_id: int,
     company_id: int,
@@ -157,7 +168,11 @@ async def get_vote_redis(
     )
 
 
-@router.get("/get_quiz_votes_redis", response_model=List[UserQuizVote])
+@router.get(
+    "/get_quiz_votes_redis",
+    response_model=List[UserQuizVote],
+    status_code=status.HTTP_200_OK,
+)
 async def get_quiz_votes_redis(
     user_id: int,
     company_id: int,
@@ -171,7 +186,9 @@ async def get_quiz_votes_redis(
     )
 
 
-@router.get("/export_quiz_results/{company_id}/{quiz_id}/csv")
+@router.get(
+    "/export_quiz_results/{company_id}/{quiz_id}/csv", status_code=status.HTTP_200_OK
+)
 async def export_quiz_results_to_csv(
     user_id: int,
     company_id: int,
@@ -193,6 +210,7 @@ async def export_quiz_results_to_csv(
 @router.get(
     "/export_quiz_results/{company_id}/{quiz_id}/json",
     response_model=List[UserQuizVote],
+    status_code=status.HTTP_200_OK,
 )
 async def export_quiz_results_to_json(
     user_id: int,

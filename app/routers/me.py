@@ -1,6 +1,5 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, Request
 from fastapi import APIRouter, Depends, Request, status
 from fastapi.security import HTTPBearer
 
@@ -82,7 +81,11 @@ async def get_invitations(
     )
 
 
-@router.get("/notifications", response_model=List[NotificationResponse])
+@router.get(
+    "/notifications",
+    response_model=List[NotificationResponse],
+    status_code=status.HTTP_200_OK,
+)
 async def get_all_my_notifications(
     uow: UOWDep,
     current_user: CurrentUserDep,
@@ -96,7 +99,9 @@ async def get_all_my_notifications(
 
 
 @router.put(
-    "/notifications/{notification_id}/read", response_model=NotificationResponse
+    "/notifications/{notification_id}/read",
+    response_model=NotificationResponse,
+    status_code=status.HTTP_200_OK,
 )
 async def read_notification_by_id(
     notification_id: int,

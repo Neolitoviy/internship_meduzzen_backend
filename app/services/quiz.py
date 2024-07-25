@@ -1,5 +1,4 @@
 from app.core.exceptions import CompanyPermissionError, QuizNotFound
-from app.repositories.notification import NotificationRepository
 from app.schemas.notification import NotificationCreate
 from app.schemas.quiz import (
     CreateQuizRequest,
