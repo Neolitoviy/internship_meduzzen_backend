@@ -3,6 +3,7 @@ from typing import List, Optional
 from pydantic import BaseModel, conlist
 
 from app.schemas.question import QuestionSchemaCreate
+from app.utils.pagination import PaginationResponse
 
 
 class CreateQuizRequest(BaseModel):
@@ -26,17 +27,8 @@ class QuizSchemaResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class PaginationLinks(BaseModel):
-    previous: Optional[str]
-    next: Optional[str]
-
-
-class QuizzesListResponse(BaseModel):
-    total_item: int
-    total_page: int
-    current_page: int
-    pagination: PaginationLinks
-    data: List[QuizSchemaResponse]
+class QuizzesListResponse(PaginationResponse):
+    items: List[QuizSchemaResponse]
 
     model_config = {"from_attributes": True}
 

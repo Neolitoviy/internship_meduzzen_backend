@@ -10,8 +10,12 @@ class CompanyRequest(Base):
     __tablename__ = "company_requests"
 
     id = Column(Integer, primary_key=True, index=True)
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
-    requested_user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    company_id = Column(
+        Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=False
+    )
+    requested_user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
     status = Column(String, nullable=True, default="pending")
     created_at = Column(DateTime, default=datetime.utcnow)
 
