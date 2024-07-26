@@ -1,11 +1,5 @@
-from app.schemas.quiz import (
-from app.core.exceptions import CompanyPermissionError, QuizNotFound
 from app.schemas.notification import NotificationCreate
-    CreateQuizRequest,
-    QuizSchemaResponse,
-    QuizzesListResponse,
-    UpdateQuizRequest,
-)
+from app.schemas.quiz import CreateQuizRequest, QuizSchemaResponse, QuizzesListResponse, UpdateQuizRequest
 from app.services.company import CompanyService
 from app.utils.pagination import paginate
 from app.utils.unitofwork import IUnitOfWork
