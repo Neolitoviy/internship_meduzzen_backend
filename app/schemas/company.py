@@ -3,6 +3,8 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
+from app.utils.pagination import PaginationResponse
+
 
 class CompanyBase(BaseModel):
     name: str
@@ -34,13 +36,7 @@ class CompanyResponse(CompanyInDB):
     pass
 
 
-class PaginationLinks(BaseModel):
-    previous: Optional[str]
-    next: Optional[str]
+class CompanyListResponse(PaginationResponse):
+    items: List[CompanyResponse]
 
-
-class CompanyListResponse(BaseModel):
-    total_pages: int
-    current_page: int
-    pagination: PaginationLinks
-    companies: List[CompanyResponse]
+    model_config = {"from_attributes": True}
