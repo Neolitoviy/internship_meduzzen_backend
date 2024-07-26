@@ -1,11 +1,8 @@
 from typing import Optional
 
-from app.schemas.company_member import (
-    CompanyMemberListResponse,
-    CompanyMemberResponse,
-    PaginationLinks,
-)
+from app.schemas.company_member import CompanyMemberListResponse, CompanyMemberResponse
 from app.services.company import CompanyService
+from app.utils.pagination import paginate
 from app.utils.unitofwork import IUnitOfWork
 
 
@@ -44,7 +41,7 @@ class CompanyMemberService:
         async with uow:
             await CompanyService.check_company_permission(uow, company_id, user_id)
 
-            if is_admin:
+            if is_admin is not None:
                 total_members = await uow.company_members.count_all(
                     company_id=company_id, is_admin=is_admin
                 )
@@ -62,30 +59,22 @@ class CompanyMemberService:
                     skip=skip, limit=limit, company_id=company_id
                 )
 
-            total_pages = (total_members + limit - 1) // limit
-            current_page = (skip // limit) + 1
-
-            base_url = request_url.split("?")[0]
-            previous_page_url = (
-                f"{base_url}?skip={max(skip - limit, 0)}&limit={limit}"
-                if current_page > 1
-                else None
-            )
-            next_page_url = (
-                f"{base_url}?skip={skip + limit}&limit={limit}"
-                if current_page < total_pages
-                else None
+            members_response = [
+                CompanyMemberResponse.model_validate(member) for member in members
+            ]
+            pagination_response = paginate(
+                items=members_response,
+                total_items=total_members,
+                skip=skip,
+                limit=limit,
+                request_url=request_url,
             )
 
             return CompanyMemberListResponse(
-                current_page=current_page,
-                total_pages=total_pages,
-                members=[
-                    CompanyMemberResponse.model_validate(member) for member in members
-                ],
-                pagination=PaginationLinks(
-                    previous=previous_page_url, next=next_page_url
-                ),
+                total_pages=pagination_response.total_pages,
+                current_page=pagination_response.current_page,
+                items=pagination_response.items,
+                pagination=pagination_response.pagination,
             )
 
     @staticmethod

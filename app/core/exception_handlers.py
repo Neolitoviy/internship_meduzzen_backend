@@ -24,7 +24,7 @@ def register_exception_handlers(app: FastAPI):
 
     @app.exception_handler(EmailAlreadyExists)
     async def email_already_exists_exception_handler(
-            request: Request, exc: EmailAlreadyExists
+        request: Request, exc: EmailAlreadyExists
     ):
         return JSONResponse(
             status_code=status.HTTP_409_CONFLICT, content={"detail": str(exc)}
@@ -32,7 +32,7 @@ def register_exception_handlers(app: FastAPI):
 
     @app.exception_handler(CompanyPermissionError)
     async def company_permission_error_exception_handler(
-            request: Request, exc: CompanyPermissionError
+        request: Request, exc: CompanyPermissionError
     ):
         return JSONResponse(
             status_code=status.HTTP_403_FORBIDDEN, content={"detail": str(exc)}
@@ -40,7 +40,7 @@ def register_exception_handlers(app: FastAPI):
 
     @app.exception_handler(InvalidCredentials)
     async def invalid_credentials_exception_handler(
-            request: Request, exc: InvalidCredentials
+        request: Request, exc: InvalidCredentials
     ):
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -49,7 +49,7 @@ def register_exception_handlers(app: FastAPI):
 
     @app.exception_handler(PermissionDenied)
     async def permission_denied_exception_handler(
-            request: Request, exc: PermissionDenied
+        request: Request, exc: PermissionDenied
     ):
         return JSONResponse(
             status_code=status.HTTP_403_FORBIDDEN,

@@ -18,7 +18,6 @@ from app.core.verify_token import VerifyToken
 from app.schemas.auth import UserAuthCreate
 from app.schemas.token import Token
 from app.schemas.user import (
-    PaginationLinks,
     UserCreate,
     UserInDB,
     UserListResponse,
@@ -26,6 +25,7 @@ from app.schemas.user import (
     UserUpdate,
 )
 from app.services.jwt import check_jwt_type, create_jwt_token, decode_jwt_token
+from app.utils.pagination import paginate
 from app.utils.unitofwork import IUnitOfWork
 
 logger = logging.getLogger(__name__)
@@ -50,28 +50,21 @@ class UserService:
         async with uow:
             total_users = await uow.users.count_all()
             users = await uow.users.find_all(skip=skip, limit=limit)
-            total_pages = (total_users + limit - 1) // limit
-            current_page = (skip // limit) + 1
 
-            base_url = request_url.split("?")[0]
-            previous_page_url = (
-                f"{base_url}?skip={max(skip - limit, 0)}&limit={limit}"
-                if current_page > 1
-                else None
-            )
-            next_page_url = (
-                f"{base_url}?skip={skip + limit}&limit={limit}"
-                if current_page < total_pages
-                else None
+            users_response = [UserResponse.model_validate(user) for user in users]
+            pagination_response = paginate(
+                items=users_response,
+                total_items=total_users,
+                skip=skip,
+                limit=limit,
+                request_url=request_url,
             )
 
             return UserListResponse(
-                total_pages=total_pages,
-                current_page=current_page,
-                users=[UserResponse.model_validate(user) for user in users],
-                pagination=PaginationLinks(
-                    previous=previous_page_url, next=next_page_url
-                ),
+                total_pages=pagination_response.total_pages,
+                current_page=pagination_response.current_page,
+                items=pagination_response.items,
+                pagination=pagination_response.pagination,
             )
 
     @staticmethod

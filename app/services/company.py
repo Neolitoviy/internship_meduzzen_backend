@@ -4,8 +4,8 @@ from app.schemas.company import (
     CompanyListResponse,
     CompanyResponse,
     CompanyUpdate,
-    PaginationLinks,
 )
+from app.utils.pagination import paginate
 from app.utils.unitofwork import IUnitOfWork
 
 
@@ -41,30 +41,23 @@ class CompanyService:
             companies = await uow.companies.find_visible_companies(
                 skip=skip, limit=limit, user_id=current_user_id
             )
-            total_pages = (total_companies + limit - 1) // limit
-            current_page = (skip // limit) + 1
 
-            base_url = request_url.split("?")[0]
-            previous_page_url = (
-                f"{base_url}?skip={max(skip - limit, 0)}&limit={limit}"
-                if current_page > 1
-                else None
-            )
-            next_page_url = (
-                f"{base_url}?skip={skip + limit}&limit={limit}"
-                if current_page < total_pages
-                else None
+            companies_response = [
+                CompanyResponse.model_validate(company) for company in companies
+            ]
+            pagination_response = paginate(
+                items=companies_response,
+                total_items=total_companies,
+                skip=skip,
+                limit=limit,
+                request_url=request_url,
             )
 
             return CompanyListResponse(
-                total_pages=total_pages,
-                current_page=current_page,
-                companies=[
-                    CompanyResponse.model_validate(company) for company in companies
-                ],
-                pagination=PaginationLinks(
-                    previous=previous_page_url, next=next_page_url
-                ),
+                total_pages=pagination_response.total_pages,
+                current_page=pagination_response.current_page,
+                items=pagination_response.items,
+                pagination=pagination_response.pagination,
             )
 
     @staticmethod
