@@ -70,29 +70,18 @@ class QuizResultService:
     ) -> float:
         async with uow:
             await CompanyService.check_company_permission(
-                uow, company_id, current_user_id, is_admin=True
+                uow, company_id, current_user_id
             )
             return await uow.quiz_results.get_average_score(user_id=user_id)
 
     @staticmethod
     async def get_company_average_score(
-        uow: IUnitOfWork, company_id: int, current_user_id: int
+        uow: IUnitOfWork, user_id: int, company_id: int, current_user_id: int
     ) -> float:
         async with uow:
             await CompanyService.check_company_permission(
-                uow, company_id, current_user_id, is_admin=True
+                uow, company_id, current_user_id
             )
-            return await uow.quiz_results.get_average_score(company_id=company_id)
-            company = await uow.companies.find_one(id=company_id)
-            if (
-                company.owner_id != current_user_id
-                and not await uow.company_members.find_one(
-                    company_id=company_id, user_id=current_user_id
-                )
-            ):
-                raise PermissionDenied(
-                    "You do not have permission to view this company's average score."
-                )
             return await uow.quiz_results.get_average_score(
                 user_id=user_id, company_id=company_id
             )
@@ -158,16 +147,9 @@ class QuizResultService:
         limit: int,
     ) -> List[CompanyMemberAverageScore]:
         async with uow:
-            company = await uow.companies.find_one(id=company_id)
-            if (
-                company.owner_id != current_user_id
-                and not await uow.company_members.find_one(
-                    company_id=company_id, user_id=current_user_id, is_admin=True
-                )
-            ):
-                raise PermissionDenied(
-                    "You do not have permission to view this company's average scores."
-                )
+            await CompanyService.check_company_permission(
+                uow, company_id, current_user_id, is_admin=True
+            )
 
             member_scores = await uow.quiz_results.get_company_members_average_scores(
                 company_id, start_date, end_date, skip, limit
@@ -196,16 +178,9 @@ class QuizResultService:
         limit: int,
     ) -> List[QuizTrend]:
         async with uow:
-            company = await uow.companies.find_one(id=company_id)
-            if (
-                company.owner_id != current_user_id
-                and not await uow.company_members.find_one(
-                    company_id=company_id, user_id=current_user_id, is_admin=True
-                )
-            ):
-                raise PermissionDenied(
-                    "You do not have permission to view this user's quiz trends."
-                )
+            await CompanyService.check_company_permission(
+                uow, company_id, current_user_id, is_admin=True
+            )
 
             quiz_trends = await uow.quiz_results.get_quiz_trends_by_date_range(
                 user_id, start_date, end_date, skip, limit
@@ -236,16 +211,10 @@ class QuizResultService:
         limit: int,
     ) -> List[CompanyUserLastAttempt]:
         async with uow:
-            company = await uow.companies.find_one(id=company_id)
-            if (
-                company.owner_id != requesting_user_id
-                and not await uow.company_members.find_one(
-                    company_id=company_id, user_id=requesting_user_id, is_admin=True
-                )
-            ):
-                raise PermissionDenied(
-                    "You do not have permission to view this company's user attempts."
-                )
+            await CompanyService.check_company_permission(
+                uow, company_id, requesting_user_id, is_admin=True
+            )
+
             members = await uow.company_members.find_all(
                 company_id=company_id, skip=skip, limit=limit
             )
