@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, EmailStr, Field, model_validator
 
 from app.core.hashing import Hasher
+from app.utils.pagination import PaginationResponse
 
 
 class UserBase(BaseModel):
@@ -87,15 +88,7 @@ class UserResponse(UserBase):
     model_config = {"from_attributes": True}
 
 
-class PaginationLinks(BaseModel):
-    previous: Optional[str]
-    next: Optional[str]
-
-
-class UserListResponse(BaseModel):
-    current_page: int
-    total_pages: int
-    pagination: PaginationLinks
-    users: List[UserResponse]
+class UserListResponse(PaginationResponse):
+    items: List[UserResponse]
 
     model_config = {"from_attributes": True}
