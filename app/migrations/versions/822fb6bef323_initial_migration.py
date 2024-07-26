@@ -1,8 +1,8 @@
 """Initial migration
 
-Revision ID: d5a12d9b51a9
-Revises:
-Create Date: 2024-07-22 00:00:54.463497
+Revision ID: 822fb6bef323
+Revises: 
+Create Date: 2024-07-26 04:43:33.173676
 
 """
 
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "d5a12d9b51a9"
+revision: str = "822fb6bef323"
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -54,10 +54,7 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(
-        op.f("ix_companies_description"),
-        "companies",
-        ["description"],
-        unique=False,
+        op.f("ix_companies_description"), "companies", ["description"], unique=False
     )
     op.create_index(op.f("ix_companies_id"), "companies", ["id"], unique=False)
     op.create_index(op.f("ix_companies_name"), "companies", ["name"], unique=False)
@@ -68,21 +65,12 @@ def upgrade() -> None:
         sa.Column("invited_user_id", sa.Integer(), nullable=False),
         sa.Column("status", sa.String(), nullable=True),
         sa.Column("created_at", sa.DateTime(), nullable=True),
-        sa.ForeignKeyConstraint(
-            ["company_id"],
-            ["companies.id"],
-        ),
-        sa.ForeignKeyConstraint(
-            ["invited_user_id"],
-            ["users.id"],
-        ),
+        sa.ForeignKeyConstraint(["company_id"], ["companies.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["invited_user_id"], ["users.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(
-        op.f("ix_company_invitations_id"),
-        "company_invitations",
-        ["id"],
-        unique=False,
+        op.f("ix_company_invitations_id"), "company_invitations", ["id"], unique=False
     )
     op.create_table(
         "company_members",
@@ -91,14 +79,8 @@ def upgrade() -> None:
         sa.Column("user_id", sa.Integer(), nullable=False),
         sa.Column("is_admin", sa.Boolean(), nullable=True),
         sa.Column("created_at", sa.DateTime(), nullable=True),
-        sa.ForeignKeyConstraint(
-            ["company_id"],
-            ["companies.id"],
-        ),
-        sa.ForeignKeyConstraint(
-            ["user_id"],
-            ["users.id"],
-        ),
+        sa.ForeignKeyConstraint(["company_id"], ["companies.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(
@@ -111,27 +93,87 @@ def upgrade() -> None:
         sa.Column("requested_user_id", sa.Integer(), nullable=False),
         sa.Column("status", sa.String(), nullable=True),
         sa.Column("created_at", sa.DateTime(), nullable=True),
+        sa.ForeignKeyConstraint(["company_id"], ["companies.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(
+            ["requested_user_id"], ["users.id"], ondelete="CASCADE"
+        ),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_index(
+        op.f("ix_company_requests_id"), "company_requests", ["id"], unique=False
+    )
+    op.create_table(
+        "quizzes",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("title", sa.String(), nullable=False),
+        sa.Column("description", sa.String(), nullable=True),
+        sa.Column("frequency_in_days", sa.Integer(), nullable=False),
+        sa.Column("company_id", sa.Integer(), nullable=False),
+        sa.Column("user_id", sa.Integer(), nullable=False),
+        sa.Column("created_at", sa.DateTime(), nullable=True),
+        sa.Column("updated_at", sa.DateTime(), nullable=True),
+        sa.ForeignKeyConstraint(["company_id"], ["companies.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_index(op.f("ix_quizzes_id"), "quizzes", ["id"], unique=False)
+    op.create_table(
+        "questions",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("quiz_id", sa.Integer(), nullable=False),
+        sa.Column("question_text", sa.String(), nullable=False),
+        sa.ForeignKeyConstraint(["quiz_id"], ["quizzes.id"], ondelete="CASCADE"),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_index(op.f("ix_questions_id"), "questions", ["id"], unique=False)
+    op.create_table(
+        "quiz_results",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("user_id", sa.Integer(), nullable=False),
+        sa.Column("quiz_id", sa.Integer(), nullable=False),
+        sa.Column("company_id", sa.Integer(), nullable=False),
+        sa.Column("total_questions", sa.Integer(), nullable=False),
+        sa.Column("total_answers", sa.Integer(), nullable=False),
+        sa.Column("score", sa.Float(), nullable=False),
+        sa.Column("created_at", sa.DateTime(), nullable=True),
         sa.ForeignKeyConstraint(
             ["company_id"],
             ["companies.id"],
         ),
         sa.ForeignKeyConstraint(
-            ["requested_user_id"],
+            ["quiz_id"],
+            ["quizzes.id"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["user_id"],
             ["users.id"],
         ),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(
-        op.f("ix_company_requests_id"),
-        "company_requests",
-        ["id"],
-        unique=False,
+    op.create_index(op.f("ix_quiz_results_id"), "quiz_results", ["id"], unique=False)
+    op.create_table(
+        "answers",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("question_id", sa.Integer(), nullable=False),
+        sa.Column("answer_text", sa.String(), nullable=False),
+        sa.Column("is_correct", sa.Boolean(), nullable=True),
+        sa.ForeignKeyConstraint(["question_id"], ["questions.id"], ondelete="CASCADE"),
+        sa.PrimaryKeyConstraint("id"),
     )
+    op.create_index(op.f("ix_answers_id"), "answers", ["id"], unique=False)
     # ### end Alembic commands ###
 
 
 def downgrade() -> None:
     # ### commands auto generated by Alembic - please adjust! ###
+    op.drop_index(op.f("ix_answers_id"), table_name="answers")
+    op.drop_table("answers")
+    op.drop_index(op.f("ix_quiz_results_id"), table_name="quiz_results")
+    op.drop_table("quiz_results")
+    op.drop_index(op.f("ix_questions_id"), table_name="questions")
+    op.drop_table("questions")
+    op.drop_index(op.f("ix_quizzes_id"), table_name="quizzes")
+    op.drop_table("quizzes")
     op.drop_index(op.f("ix_company_requests_id"), table_name="company_requests")
     op.drop_table("company_requests")
     op.drop_index(op.f("ix_company_members_id"), table_name="company_members")
