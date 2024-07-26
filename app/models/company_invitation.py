@@ -10,8 +10,8 @@ class CompanyInvitation(Base):
     __tablename__ = "company_invitations"
 
     id = Column(Integer, primary_key=True, index=True)
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
-    invited_user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    company_id = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=False)
+    invited_user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     status = Column(String, nullable=True, default="pending")
     created_at = Column(DateTime, default=datetime.utcnow)
 

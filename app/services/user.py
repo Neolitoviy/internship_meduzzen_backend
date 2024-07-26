@@ -36,7 +36,7 @@ class UserService:
     async def create_user(uow: IUnitOfWork, user: UserCreate) -> UserResponse:
         user_dict = user.model_dump()
         async with uow:
-            if await uow.users.find_one(email=user_dict["email"]):
+            if await uow.users.find_one_or_none(email=user_dict["email"]):
                 raise EmailAlreadyExists(
                     f"User with email {user_dict['email']} already exists"
                 )

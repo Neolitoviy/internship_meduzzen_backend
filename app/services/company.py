@@ -87,8 +87,6 @@ class CompanyService:
     ) -> None:
         await self.check_company_owner(uow, company_id, current_user_id)
         async with uow:
-            # Delete all members and then company
-            await uow.company_members.delete_many(company_id=company_id)
             await uow.companies.delete_one(company_id)
 
     @staticmethod
