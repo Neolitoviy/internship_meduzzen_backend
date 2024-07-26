@@ -9,9 +9,6 @@ from app.core.exceptions import (
     CompanyPermissionError,
     EmailAlreadyExists,
     InvalidCredentials,
-    InvitationNotFound,
-    MemberNotFound,
-    NotificationNotFound,
     PermissionDenied,
     RecordNotFound,
     UserNotFound,
@@ -83,10 +80,4 @@ def register_exception_handlers(app: FastAPI):
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
             content={"detail": str(exc)},
-        )
-
-    @app.exception_handler(NotificationNotFound)
-    async def notification_not_found_handler(request: Request, exc: NotificationNotFound):
-        return JSONResponse(
-            status_code=status.HTTP_404_NOT_FOUND, content={"detail": exc.message}
         )
