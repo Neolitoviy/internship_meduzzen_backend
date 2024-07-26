@@ -17,6 +17,7 @@ class Company(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    owner = relationship("User", back_populates="owned_companies")
     invitations = relationship(
         "CompanyInvitation", back_populates="company", cascade="all, delete-orphan"
     )
