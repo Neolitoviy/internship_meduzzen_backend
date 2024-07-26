@@ -1,7 +1,9 @@
 from datetime import datetime
-from typing import List, Optional
+from typing import List
 
 from pydantic import BaseModel
+
+from app.utils.pagination import PaginationResponse
 
 
 class CompanyMemberBase(BaseModel):
@@ -17,15 +19,7 @@ class CompanyMemberResponse(CompanyMemberBase):
     model_config = {"from_attributes": True}
 
 
-class PaginationLinks(BaseModel):
-    previous: Optional[str]
-    next: Optional[str]
-
-
-class CompanyMemberListResponse(BaseModel):
-    current_page: int
-    total_pages: int
-    pagination: PaginationLinks
-    members: List[CompanyMemberResponse]
+class CompanyMemberListResponse(PaginationResponse):
+    items: List[CompanyMemberResponse]
 
     model_config = {"from_attributes": True}

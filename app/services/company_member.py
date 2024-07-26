@@ -1,11 +1,8 @@
 from typing import Optional
 
-from app.core.exceptions import CompanyPermissionError, MemberNotFound
-from app.schemas.company_member import (
-    CompanyMemberListResponse,
-    CompanyMemberResponse,
-    PaginationLinks,
-)
+from app.schemas.company_member import CompanyMemberListResponse, CompanyMemberResponse
+from app.services.company import CompanyService
+from app.utils.pagination import paginate
 from app.utils.unitofwork import IUnitOfWork
 
 
@@ -16,13 +13,10 @@ class CompanyMemberService:
     ) -> None:
         async with uow:
             member = await uow.company_members.find_one(id=member_id)
-            if not member:
-                raise MemberNotFound("Member not found")
-            company = await uow.companies.find_one(id=member.company_id)
-            if company and company.owner_id == current_user_id:
-                await uow.company_members.delete_one(member_id)
-                return
-        raise CompanyPermissionError("You don't have permission to remove this member")
+            await CompanyService.check_company_owner(
+                uow, member.company_id, current_user_id
+            )
+            await uow.company_members.delete_one(member_id)
 
     @staticmethod
     async def leave_company(
@@ -32,10 +26,7 @@ class CompanyMemberService:
             member = await uow.company_members.find_one(
                 user_id=current_user_id, company_id=company_id
             )
-            if member:
-                await uow.company_members.delete_one(member.id)
-                return
-        raise MemberNotFound("You are not a member of this company")
+            await uow.company_members.delete_one(member.id)
 
     @staticmethod
     async def get_memberships(
@@ -48,13 +39,9 @@ class CompanyMemberService:
         is_admin: Optional[bool] = None,
     ) -> CompanyMemberListResponse:
         async with uow:
-            company = await uow.companies.find_one(id=company_id)
-            if not company or company.owner_id != user_id:
-                raise CompanyPermissionError(
-                    "You don't have permission to view this company's members."
-                )
+            await CompanyService.check_company_permission(uow, company_id, user_id)
 
-            if is_admin:
+            if is_admin is not None:
                 total_members = await uow.company_members.count_all(
                     company_id=company_id, is_admin=is_admin
                 )
@@ -72,30 +59,22 @@ class CompanyMemberService:
                     skip=skip, limit=limit, company_id=company_id
                 )
 
-            total_pages = (total_members + limit - 1) // limit
-            current_page = (skip // limit) + 1
-
-            base_url = request_url.split("?")[0]
-            previous_page_url = (
-                f"{base_url}?skip={max(skip - limit, 0)}&limit={limit}"
-                if current_page > 1
-                else None
-            )
-            next_page_url = (
-                f"{base_url}?skip={skip + limit}&limit={limit}"
-                if current_page < total_pages
-                else None
+            members_response = [
+                CompanyMemberResponse.model_validate(member) for member in members
+            ]
+            pagination_response = paginate(
+                items=members_response,
+                total_items=total_members,
+                skip=skip,
+                limit=limit,
+                request_url=request_url,
             )
 
             return CompanyMemberListResponse(
-                current_page=current_page,
-                total_pages=total_pages,
-                members=[
-                    CompanyMemberResponse.model_validate(member) for member in members
-                ],
-                pagination=PaginationLinks(
-                    previous=previous_page_url, next=next_page_url
-                ),
+                total_pages=pagination_response.total_pages,
+                current_page=pagination_response.current_page,
+                items=pagination_response.items,
+                pagination=pagination_response.pagination,
             )
 
     @staticmethod
@@ -103,20 +82,10 @@ class CompanyMemberService:
         uow: IUnitOfWork, company_id: int, user_id: int, current_user_id: int
     ) -> None:
         async with uow:
-            company = await uow.companies.find_one(id=company_id)
-            if not company or company.owner_id != current_user_id:
-                raise CompanyPermissionError(
-                    "You don't have permission to appoint an admin for this company."
-                )
-
+            await CompanyService.check_company_owner(uow, company_id, current_user_id)
             member = await uow.company_members.find_one(
                 company_id=company_id, user_id=user_id
             )
-            if not member:
-                raise MemberNotFound(
-                    f"User with id {user_id} is not a member of the company."
-                )
-
             member.is_admin = True
 
     @staticmethod
@@ -124,18 +93,8 @@ class CompanyMemberService:
         uow: IUnitOfWork, company_id: int, user_id: int, current_user_id: int
     ) -> None:
         async with uow:
-            company = await uow.companies.find_one(id=company_id)
-            if not company or company.owner_id != current_user_id:
-                raise CompanyPermissionError(
-                    "You don't have permission to remove an admin from this company."
-                )
-
+            await CompanyService.check_company_owner(uow, company_id, current_user_id)
             member = await uow.company_members.find_one(
                 company_id=company_id, user_id=user_id
             )
-            if not member:
-                raise MemberNotFound(
-                    f"User with id {user_id} is not a member of the company."
-                )
-
             member.is_admin = False

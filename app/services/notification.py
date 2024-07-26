@@ -1,6 +1,5 @@
 from typing import List
 
-from app.core.exceptions import NotificationNotFound
 from app.schemas.notification import NotificationResponse
 from app.utils.unitofwork import IUnitOfWork
 
@@ -24,11 +23,7 @@ class NotificationService:
         uow: IUnitOfWork, notification_id: int, user_id: int
     ) -> NotificationResponse:
         async with uow:
-            notification = await uow.notifications.find_one(
-                id=notification_id, user_id=user_id
-            )
-            if not notification:
-                raise NotificationNotFound("Notification not found")
+            await uow.notifications.find_one(id=notification_id, user_id=user_id)
             notification_data = {"status": "read"}
             updated_notification = await uow.notifications.edit_one(
                 notification_id, notification_data

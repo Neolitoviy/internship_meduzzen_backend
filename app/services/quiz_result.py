@@ -4,13 +4,6 @@ from datetime import datetime
 from io import StringIO
 from typing import List
 
-from app.core.exceptions import (
-    AnswerNotFound,
-    CompanyNotFound,
-    PermissionDenied,
-    QuestionNotFound,
-    QuizNotFound,
-)
 from app.db.redis_db import get_redis_client
 from app.schemas.analytics import (
     CompanyMemberAverageScore,
@@ -20,6 +13,7 @@ from app.schemas.analytics import (
     QuizTrend,
 )
 from app.schemas.quiz_result import QuizResultResponse, QuizVoteRequest, UserQuizVote
+from app.services.company import CompanyService
 from app.utils.unitofwork import IUnitOfWork
 
 
@@ -33,31 +27,14 @@ class QuizResultService:
         user_id: int,
     ) -> QuizResultResponse:
         async with uow:
-            quiz = await uow.quizzes.find_one(id=quiz_id)
-            if not quiz:
-                raise QuizNotFound("Quiz not found")
-
-            company = await uow.companies.find_one(id=quiz.company_id)
-            if company.owner_id != user_id and not await uow.company_members.find_one(
-                company_id=company_id, user_id=user_id
-            ):
-                raise PermissionDenied("You do not have permission to take this quiz.")
-
+            await CompanyService.check_company_permission(uow, company_id, user_id)
             total_questions = 0
             total_answers = 0
             for question_id, answer_id in vote_data.answers.items():
                 question = await uow.questions.find_one(id=question_id)
-                if not question or question.quiz_id != quiz_id:
-                    raise QuestionNotFound(
-                        f"Question {question_id} not found in quiz {quiz_id}"
-                    )
-
-                answer = await uow.answers.find_one(id=answer_id)
-                if not answer or answer.question_id != question_id:
-                    raise AnswerNotFound(
-                        f"Answer {answer_id} not found for question {question_id}"
-                    )
-
+                answer = await uow.answers.find_one(
+                    id=answer_id, question_id=question_id
+                )
                 is_correct = answer.is_correct
                 if is_correct:
                     total_answers += 1
@@ -74,8 +51,6 @@ class QuizResultService:
                 )
                 await QuizResultService.save_quiz_vote_to_redis(vote)
 
-            score = round((total_answers / total_questions) * 100, 2)
-
             quiz_result = await uow.quiz_results.add_one(
                 {
                     "user_id": user_id,
@@ -83,7 +58,7 @@ class QuizResultService:
                     "company_id": company_id,
                     "total_questions": total_questions,
                     "total_answers": total_answers,
-                    "score": score,
+                    "score": round((total_answers / total_questions) * 100, 2),
                     "created_at": datetime.utcnow(),
                 }
             )
@@ -94,16 +69,9 @@ class QuizResultService:
         uow: IUnitOfWork, user_id: int, company_id: int, current_user_id: int
     ) -> float:
         async with uow:
-            company = await uow.companies.find_one(id=company_id)
-            if (
-                company.owner_id != current_user_id
-                and not await uow.company_members.find_one(
-                    company_id=company_id, user_id=current_user_id
-                )
-            ):
-                raise PermissionDenied(
-                    "You do not have permission to view this user's average score."
-                )
+            await CompanyService.check_company_permission(
+                uow, company_id, current_user_id
+            )
             return await uow.quiz_results.get_average_score(user_id=user_id)
 
     @staticmethod
@@ -111,16 +79,9 @@ class QuizResultService:
         uow: IUnitOfWork, user_id: int, company_id: int, current_user_id: int
     ) -> float:
         async with uow:
-            company = await uow.companies.find_one(id=company_id)
-            if (
-                company.owner_id != current_user_id
-                and not await uow.company_members.find_one(
-                    company_id=company_id, user_id=current_user_id
-                )
-            ):
-                raise PermissionDenied(
-                    "You do not have permission to view this company's average score."
-                )
+            await CompanyService.check_company_permission(
+                uow, company_id, current_user_id
+            )
             return await uow.quiz_results.get_average_score(
                 user_id=user_id, company_id=company_id
             )
@@ -186,16 +147,9 @@ class QuizResultService:
         limit: int,
     ) -> List[CompanyMemberAverageScore]:
         async with uow:
-            company = await uow.companies.find_one(id=company_id)
-            if (
-                company.owner_id != current_user_id
-                and not await uow.company_members.find_one(
-                    company_id=company_id, user_id=current_user_id, is_admin=True
-                )
-            ):
-                raise PermissionDenied(
-                    "You do not have permission to view this company's average scores."
-                )
+            await CompanyService.check_company_permission(
+                uow, company_id, current_user_id, is_admin=True
+            )
 
             member_scores = await uow.quiz_results.get_company_members_average_scores(
                 company_id, start_date, end_date, skip, limit
@@ -224,16 +178,9 @@ class QuizResultService:
         limit: int,
     ) -> List[QuizTrend]:
         async with uow:
-            company = await uow.companies.find_one(id=company_id)
-            if (
-                company.owner_id != current_user_id
-                and not await uow.company_members.find_one(
-                    company_id=company_id, user_id=current_user_id, is_admin=True
-                )
-            ):
-                raise PermissionDenied(
-                    "You do not have permission to view this user's quiz trends."
-                )
+            await CompanyService.check_company_permission(
+                uow, company_id, current_user_id, is_admin=True
+            )
 
             quiz_trends = await uow.quiz_results.get_quiz_trends_by_date_range(
                 user_id, start_date, end_date, skip, limit
@@ -264,16 +211,10 @@ class QuizResultService:
         limit: int,
     ) -> List[CompanyUserLastAttempt]:
         async with uow:
-            company = await uow.companies.find_one(id=company_id)
-            if (
-                company.owner_id != requesting_user_id
-                and not await uow.company_members.find_one(
-                    company_id=company_id, user_id=requesting_user_id, is_admin=True
-                )
-            ):
-                raise PermissionDenied(
-                    "You do not have permission to view this company's user attempts."
-                )
+            await CompanyService.check_company_permission(
+                uow, company_id, requesting_user_id, is_admin=True
+            )
+
             members = await uow.company_members.find_all(
                 company_id=company_id, skip=skip, limit=limit
             )
@@ -311,19 +252,10 @@ class QuizResultService:
         quiz_id: int,
     ) -> List[UserQuizVote]:
         async with uow:
-            company = await uow.companies.find_one(id=company_id)
-            if not company:
-                raise QuizNotFound("Company not found")
-            if user_id != current_user_id:
-                if (
-                    company.owner_id != current_user_id
-                    and not await uow.company_members.find_one(
-                        company_id=company_id, user_id=current_user_id, is_admin=True
-                    )
-                ):
-                    raise PermissionDenied(
-                        "You do not have permission to view this company's quiz votes."
-                    )
+            await CompanyService.check_company_permission(
+                uow, company_id, current_user_id, is_admin=True
+            )
+
         connection = await get_redis_client()
         user_key_pattern = f"quiz_vote:{user_id}:{company_id}:{quiz_id}:*"
         user_keys = await connection.keys(user_key_pattern)
@@ -348,19 +280,9 @@ class QuizResultService:
         question_id: int,
     ):
         async with uow:
-            company = await uow.companies.find_one(id=company_id)
-            if not company:
-                raise CompanyNotFound("Company not found")
-            if user_id != current_user_id:
-                if (
-                    company.owner_id != current_user_id
-                    and not await uow.company_members.find_one(
-                        company_id=company_id, user_id=current_user_id, is_admin=True
-                    )
-                ):
-                    raise PermissionDenied(
-                        "You do not have permission to view this company's quiz votes."
-                    )
+            await CompanyService.check_company_permission(
+                uow, company_id, current_user_id, is_admin=True
+            )
         connection = await get_redis_client()
         key = f"quiz_vote:{user_id}:{company_id}:{quiz_id}:{question_id}"
         data = await connection.get(key)
