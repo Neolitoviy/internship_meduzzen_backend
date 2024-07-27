@@ -111,6 +111,23 @@ Replace `[CONTAINER ID]` with the actual ID of your container.
 ```bash
 pytest
 ```
+### 3. Running Tests with coverage report
+
+```bash
+pytest --cov=./app --cov-report=xml --cov-report=html
+```
+
+### 4. View a report on the command line
+
+```bash
+coverage report -m
+```
+
+### 5. HTML report generation
+
+```bash
+coverage html
+```
 
 ## Running the Application with Docker
 
