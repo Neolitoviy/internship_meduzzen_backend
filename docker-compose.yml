@@ -1,22 +1,6 @@
 version: '3.8'
 
 services:
-  db:
-    image: postgres:latest
-    environment:
-      - POSTGRES_USER
-      - POSTGRES_PASSWORD=${POSTGRES_PASS}
-      - POSTGRES_DB
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-
-  redis:
-    image: redis:latest
-    ports:
-      - "6379:6379"
-
   web:
     build:
       context: .
@@ -26,16 +10,13 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - POSTGRES_USER
+      - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASS}
-      - POSTGRES_DB
-      - POSTGRES_PORT
-      - POSTGRES_HOST=db
-      - REDIS_HOST=redis
-      - REDIS_PORT
-    depends_on:
-      - db
-      - redis
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
 
   celery:
     build:
@@ -44,16 +25,13 @@ services:
     volumes:
       - .:/app
     environment:
-      - POSTGRES_USER
+      - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASS}
-      - POSTGRES_DB
-      - POSTGRES_PORT
-      - POSTGRES_HOST=db
-      - REDIS_HOST=redis
-      - REDIS_PORT
-    depends_on:
-      - db
-      - redis
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
 
   celery-beat:
     build:
@@ -62,17 +40,13 @@ services:
     volumes:
       - .:/app
     environment:
-      - POSTGRES_USER
+      - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASS}
-      - POSTGRES_DB
-      - POSTGRES_PORT
-      - POSTGRES_HOST=db
-      - REDIS_HOST=redis
-      - REDIS_PORT
-    depends_on:
-      - db
-      - redis
-      - celery
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
 
   flower:
     image: mher/flower:latest
@@ -84,17 +58,10 @@ services:
     ports:
       - "5555:5555"
     environment:
-      - POSTGRES_USER
+      - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASS}
-      - POSTGRES_DB
-      - POSTGRES_PORT
-      - POSTGRES_HOST=db
-      - REDIS_HOST=redis
-      - REDIS_PORT
-    depends_on:
-      - db
-      - redis
-      - celery
-
-volumes:
-  postgres_data:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
