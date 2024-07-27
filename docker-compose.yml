@@ -1,6 +1,22 @@
 version: '3.8'
 
 services:
+  db:
+    image: postgres:latest
+    environment:
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD=${POSTGRES_PASS}
+      - POSTGRES_DB
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+
   web:
     build:
       context: .
@@ -10,13 +26,16 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres2191202
-      - POSTGRES_DB=postgres
-      - POSTGRES_PORT=5432
-      - POSTGRES_HOST=be19db.c38keuoas3pn.us-east-1.rds.amazonaws.com
-      - REDIS_HOST=be19redis-ogxw1i.serverless.use1.cache.amazonaws.com
-      - REDIS_PORT=6379
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD=${POSTGRES_PASS}
+      - POSTGRES_DB
+      - POSTGRES_PORT
+      - POSTGRES_HOST=db
+      - REDIS_HOST=redis
+      - REDIS_PORT
+    depends_on:
+      - db
+      - redis
 
   celery:
     build:
@@ -25,13 +44,16 @@ services:
     volumes:
       - .:/app
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres2191202
-      - POSTGRES_DB=postgres
-      - POSTGRES_PORT=5432
-      - POSTGRES_HOST=be19db.c38keuoas3pn.us-east-1.rds.amazonaws.com
-      - REDIS_HOST=be19redis-ogxw1i.serverless.use1.cache.amazonaws.com
-      - REDIS_PORT=6379
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD=${POSTGRES_PASS}
+      - POSTGRES_DB
+      - POSTGRES_PORT
+      - POSTGRES_HOST=db
+      - REDIS_HOST=redis
+      - REDIS_PORT
+    depends_on:
+      - db
+      - redis
 
   celery-beat:
     build:
@@ -40,13 +62,17 @@ services:
     volumes:
       - .:/app
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres2191202
-      - POSTGRES_DB=postgres
-      - POSTGRES_PORT=5432
-      - POSTGRES_HOST=be19db.c38keuoas3pn.us-east-1.rds.amazonaws.com
-      - REDIS_HOST=be19redis-ogxw1i.serverless.use1.cache.amazonaws.com
-      - REDIS_PORT=6379
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD=${POSTGRES_PASS}
+      - POSTGRES_DB
+      - POSTGRES_PORT
+      - POSTGRES_HOST=db
+      - REDIS_HOST=redis
+      - REDIS_PORT
+    depends_on:
+      - db
+      - redis
+      - celery
 
   flower:
     image: mher/flower:latest
@@ -58,10 +84,17 @@ services:
     ports:
       - "5555:5555"
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres2191202
-      - POSTGRES_DB=postgres
-      - POSTGRES_PORT=5432
-      - POSTGRES_HOST=be19db.c38keuoas3pn.us-east-1.rds.amazonaws.com
-      - REDIS_HOST=be19redis-ogxw1i.serverless.use1.cache.amazonaws.com
-      - REDIS_PORT=6379
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD=${POSTGRES_PASS}
+      - POSTGRES_DB
+      - POSTGRES_PORT
+      - POSTGRES_HOST=db
+      - REDIS_HOST=redis
+      - REDIS_PORT
+    depends_on:
+      - db
+      - redis
+      - celery
+
+volumes:
+  postgres_data:
