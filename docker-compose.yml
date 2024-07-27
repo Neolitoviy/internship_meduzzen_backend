@@ -10,13 +10,13 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASS}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_PORT=${POSTGRES_PORT}
-      - POSTGRES_HOST=${POSTGRES_HOST}
-      - REDIS_HOST=${REDIS_HOST}
-      - REDIS_PORT=${REDIS_PORT}
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres2191202
+      - POSTGRES_DB=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_HOST=be19db.c38keuoas3pn.us-east-1.rds.amazonaws.com
+      - REDIS_HOST=be19redis-ogxw1i.serverless.use1.cache.amazonaws.com
+      - REDIS_PORT=6379
 
   celery:
     build:
@@ -25,13 +25,13 @@ services:
     volumes:
       - .:/app
     environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASS}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_PORT=${POSTGRES_PORT}
-      - POSTGRES_HOST=${POSTGRES_HOST}
-      - REDIS_HOST=${REDIS_HOST}
-      - REDIS_PORT=${REDIS_PORT}
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres2191202
+      - POSTGRES_DB=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_HOST=be19db.c38keuoas3pn.us-east-1.rds.amazonaws.com
+      - REDIS_HOST=be19redis-ogxw1i.serverless.use1.cache.amazonaws.com
+      - REDIS_PORT=6379
 
   celery-beat:
     build:
@@ -40,13 +40,13 @@ services:
     volumes:
       - .:/app
     environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASS}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_PORT=${POSTGRES_PORT}
-      - POSTGRES_HOST=${POSTGRES_HOST}
-      - REDIS_HOST=${REDIS_HOST}
-      - REDIS_PORT=${REDIS_PORT}
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres2191202
+      - POSTGRES_DB=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_HOST=be19db.c38keuoas3pn.us-east-1.rds.amazonaws.com
+      - REDIS_HOST=be19redis-ogxw1i.serverless.use1.cache.amazonaws.com
+      - REDIS_PORT=6379
 
   flower:
     image: mher/flower:latest
@@ -58,10 +58,10 @@ services:
     ports:
       - "5555:5555"
     environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASS}
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_PORT=${POSTGRES_PORT}
-      - POSTGRES_HOST=${POSTGRES_HOST}
-      - REDIS_HOST=${REDIS_HOST}
-      - REDIS_PORT=${REDIS_PORT}
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres2191202
+      - POSTGRES_DB=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_HOST=be19db.c38keuoas3pn.us-east-1.rds.amazonaws.com
+      - REDIS_HOST=be19redis-ogxw1i.serverless.use1.cache.amazonaws.com
+      - REDIS_PORT=6379
