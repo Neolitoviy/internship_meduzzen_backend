@@ -199,7 +199,7 @@ It should return a JSON response:
 }
 ```
 
-Otherwise it should return an error message.
+Otherwise, it should return an error message.
 
 ## Creating and Applying Migrations
 
