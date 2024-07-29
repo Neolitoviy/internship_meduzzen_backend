@@ -13,6 +13,12 @@ celery = Celery(
     "tasks", broker=f"rediss://{settings.redis_host}:{settings.redis_port}/0"
 )
 
+celery.conf.update(
+    broker_use_ssl={
+        'ssl_cert_reqs': None  # This disables SSL certificate verification
+    }
+)
+
 
 @celery.task
 def send_notifications():
