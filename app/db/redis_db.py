@@ -1,6 +1,6 @@
 import logging
 
-import asyncio_redis
+import redis.asyncio as redis
 
 from app.core.config import settings
 
@@ -8,8 +8,10 @@ logger = logging.getLogger(__name__)
 
 
 async def get_redis_client():
-    return await asyncio_redis.Connection.create(
-        host=settings.redis_host, port=settings.redis_port
+    return redis.Redis(
+        host=settings.redis_host,
+        port=int(settings.redis_port),
+        ssl=True
     )
 
 
@@ -18,9 +20,9 @@ async def check_redis_connection():
         logger.info("Attempting to connect to Redis")
         connection = await get_redis_client()
         response = await connection.ping()
-        connection.close()
+        await connection.close()
         logger.info("Successfully connected to Redis")
-        return response.status == "PONG"
+        return response
     except Exception as error:
         logger.error("Error connecting to Redis: %s", error)
         return str(error)
