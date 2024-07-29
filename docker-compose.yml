@@ -14,8 +14,8 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASS}
       - POSTGRES_DB
       - POSTGRES_PORT
-      - POSTGRES_HOST=db
-      - REDIS_HOST=redis
+      - POSTGRES_HOST
+      - REDIS_HOST
       - REDIS_PORT
 
   celery:
@@ -29,8 +29,8 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASS}
       - POSTGRES_DB
       - POSTGRES_PORT
-      - POSTGRES_HOST=db
-      - REDIS_HOST=redis
+      - POSTGRES_HOST
+      - REDIS_HOST
       - REDIS_PORT
 
   celery-beat:
@@ -44,8 +44,8 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASS}
       - POSTGRES_DB
       - POSTGRES_PORT
-      - POSTGRES_HOST=db
-      - REDIS_HOST=redis
+      - POSTGRES_HOST
+      - REDIS_HOST
       - REDIS_PORT
     depends_on:
       - celery
@@ -64,8 +64,8 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASS}
       - POSTGRES_DB
       - POSTGRES_PORT
-      - POSTGRES_HOST=db
-      - REDIS_HOST=redis
+      - POSTGRES_HOST
+      - REDIS_HOST
       - REDIS_PORT
     depends_on:
       - celery
