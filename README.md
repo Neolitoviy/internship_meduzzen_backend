@@ -1,6 +1,10 @@
 
 # FastAPI Project
 
+## Access the Deployed Site
+
+You can access the deployed site at: http://35.175.210.200:8000/docs
+
 ## Dependencies
 
 - Python ^3.10
@@ -320,4 +324,120 @@ It will be at:
 
 ```http
 http://127.0.0.1:5555
+```
+
+## Deployment Guide
+
+### 1. Register at AWS
+1. Go to [AWS](https://aws.amazon.com/).
+2. Create an account.
+
+### 2. Create an EC2 Instance
+1. Visit: [EC2 Dashboard](https://us-east-1.console.aws.amazon.com/ec2/home?region=us-east-1#LaunchInstances:).
+2. Choose Amazon Linux 2 as the AMI.
+3. Select the instance type (e.g., t2.micro).
+4. Create a new key pair or use an existing one (this will download a .pem key file which you can copy to the project root).
+5. Launch the instance.
+6. Go to the created instance -> Security -> click on the Security groups link -> click Edit inbound rules -> add the following rules:
+   - [Type: Custom TCP, Port range: 8000]
+   - [Type: Custom TCP, Port range: 5555]
+   - [Type: Custom TCP, Port range: 5432]
+   - [Type: Custom TCP, Port range: 6379]
+
+### 3. Create an RDS Instance and Connect to EC2 Security Group
+1. Visit [RDS Dashboard](https://us-east-1.console.aws.amazon.com/rds/home?region=us-east-1#launch-dbinstance:gdb=true).
+2. Choose the instance type and settings.
+3. Connect the RDS instance to the EC2 security group.
+
+### 4. Create an ElastiCache Instance and Connect to RDS Security Group
+1. Visit [ElastiCache Dashboard](https://us-east-1.console.aws.amazon.com/elasticache/home?region=us-east-1).
+2. Create a new ElastiCache cluster.
+3. Connect the ElastiCache instance to the RDS security group.
+
+### 5. Set Key Permissions
+
+#### On Windows:
+
+```bash
+Get-Acl .\your_key.pem | Format-List
+$acl = Get-Acl .\your_key.pem
+$acl.SetAccessRuleProtection($true, $false)
+$acl.Access | ForEach-Object { $acl.RemoveAccessRule($_) }
+$rule = New-Object System.Security.AccessControl.FileSystemAccessRule("$(whoami)", "Read", "Allow")
+$acl.AddAccessRule($rule)
+Set-Acl .\your_key.pem $acl
+Get-Acl .\your_key.pem | Format-List
+```
+
+#### On Linux/Mac:
+
+```bash
+chmod 400 your_key.pem
+```
+
+### 6. Connect to the Instance via SSH:
+
+```bash
+ssh -i "your_key.pem" ec2-user@your_ec2_public_ip
+```
+
+### 7. Install Git:
+
+```bash
+sudo yum install git -y
+```
+
+### 8. Install Docker and Docker Compose:
+
+#### Update packages and install Docker:
+
+```bash
+sudo yum update -y
+sudo yum install docker -y
+sudo service docker start
+sudo usermod -a -G docker ec2-user
+```
+
+#### Install Docker Compose:
+
+```bash
+sudo curl -L "https://github.com/docker/compose/releases/download/v2.3.3/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+```
+
+### 9. Clone the Repository:
+
+```bash
+git clone -b be_19_add_aws_structure https://Neolitoviy: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@github.com/Neolitoviy/internship_meduzzen_backend.git
+cd internship_meduzzen_backend
+```
+
+### 10. Setting Up the Environment:
+
+#### Add environment variables to the .env file like in .env.sample:
+
+```bash
+nano .env
+```
+
+### 11. Launch the Application:
+
+#### Build and start the application using Docker Compose:
+
+```bash
+sudo docker-compose up --build -d
+```
+
+#### Run database migrations:
+
+```bash
+sudo docker-compose exec web alembic upgrade head
+```
+
+### 12. Update the Application:
+
+#### Use git to pull the latest changes:
+
+```bash
+git pull origin be_19_add_aws_structure
 ```
