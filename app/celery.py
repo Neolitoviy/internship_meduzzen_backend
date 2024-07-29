@@ -22,6 +22,6 @@ def send_notifications():
 celery.conf.beat_schedule = {
     "check-quiz-completion-every-day": {
         "task": "app.celery.send_notifications",
-        "schedule": crontab(hour="0", minute="0"),  # Every day at midnight
+        "schedule": crontab(minute="*"),  # Every minute
     },
 }

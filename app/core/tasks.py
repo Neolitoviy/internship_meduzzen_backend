@@ -13,7 +13,7 @@ async def check_quiz_completion():
             )
             quiz = await uow.quizzes.find_one(id=last_attempt.quiz_id)
             time_passed = (datetime.utcnow() - last_attempt.created_at).days
-            if time_passed <= quiz.frequency_in_days:
+            if time_passed >= quiz.frequency_in_days:
                 notification = NotificationCreate(
                     user_id=member.user_id,
                     quiz_id=quiz.id,
