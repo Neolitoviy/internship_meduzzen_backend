@@ -10,13 +10,7 @@ from app.core.tasks import check_quiz_completion
 nest_asyncio.apply()
 
 celery = Celery(
-    "tasks", broker=f"rediss://{settings.redis_host}:{settings.redis_port}/0"
-)
-
-celery.conf.update(
-    broker_use_ssl={
-        'ssl_cert_reqs': None  # This disables SSL certificate verification
-    }
+    "tasks", broker=f"redis://{settings.redis_host}:{settings.redis_port}/0"
 )
 
 
@@ -28,6 +22,6 @@ def send_notifications():
 celery.conf.beat_schedule = {
     "check-quiz-completion-every-day": {
         "task": "app.celery.send_notifications",
-        "schedule": crontab(minute="*"),  # Every minute
+        "schedule": crontab(hour="0", minute="0"),  # Every day at midnight
     },
 }
