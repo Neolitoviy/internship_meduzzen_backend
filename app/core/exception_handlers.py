@@ -1,18 +1,16 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from sqlalchemy.exc import NoResultFound
 from starlette import status
 
 from app.core.exceptions import (
+    AddRecordError,
     BadRequest,
-    CompanyNotFound,
     CompanyPermissionError,
     EmailAlreadyExists,
     InvalidCredentials,
-    InvitationNotFound,
-    MemberNotFound,
     PermissionDenied,
-    RequestNotFound,
-    UserAlreadyExists,
+    RecordNotFound,
     UserNotFound,
 )
 
@@ -32,50 +30,12 @@ def register_exception_handlers(app: FastAPI):
             status_code=status.HTTP_409_CONFLICT, content={"detail": str(exc)}
         )
 
-    @app.exception_handler(UserAlreadyExists)
-    async def user_already_exists_exception_handler(
-        request: Request, exc: UserAlreadyExists
-    ):
-        return JSONResponse(
-            status_code=status.HTTP_409_CONFLICT, content={"detail": str(exc)}
-        )
-
-    @app.exception_handler(CompanyNotFound)
-    async def company_not_found_exception_handler(
-        request: Request, exc: CompanyNotFound
-    ):
-        return JSONResponse(
-            status_code=status.HTTP_404_NOT_FOUND, content={"detail": str(exc)}
-        )
-
     @app.exception_handler(CompanyPermissionError)
     async def company_permission_error_exception_handler(
         request: Request, exc: CompanyPermissionError
     ):
         return JSONResponse(
             status_code=status.HTTP_403_FORBIDDEN, content={"detail": str(exc)}
-        )
-
-    @app.exception_handler(InvitationNotFound)
-    async def invitation_not_found_exception_handler(
-        request: Request, exc: InvitationNotFound
-    ):
-        return JSONResponse(
-            status_code=status.HTTP_404_NOT_FOUND, content={"detail": str(exc)}
-        )
-
-    @app.exception_handler(MemberNotFound)
-    async def member_not_found_exception_handler(request: Request, exc: MemberNotFound):
-        return JSONResponse(
-            status_code=status.HTTP_404_NOT_FOUND, content={"detail": str(exc)}
-        )
-
-    @app.exception_handler(RequestNotFound)
-    async def request_not_found_exception_handler(
-        request: Request, exc: RequestNotFound
-    ):
-        return JSONResponse(
-            status_code=status.HTTP_404_NOT_FOUND, content={"detail": str(exc)}
         )
 
     @app.exception_handler(InvalidCredentials)
@@ -101,4 +61,23 @@ def register_exception_handlers(app: FastAPI):
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={"detail": exc.message},
+        )
+
+    @app.exception_handler(RecordNotFound)
+    async def record_not_found_handler(request: Request, exc: RecordNotFound):
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND, content={"detail": exc.message}
+        )
+
+    @app.exception_handler(AddRecordError)
+    async def add_record_handler(request: Request, exc: AddRecordError):
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND, content={"detail": exc.message}
+        )
+
+    @app.exception_handler(NoResultFound)
+    async def no_result_found_handler(request: Request, exc: NoResultFound):
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={"detail": str(exc)},
         )

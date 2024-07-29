@@ -1,8 +1,11 @@
+from .answer import Answer
 from .base import Base, metadata
 from .company import Company
 from .company_invitation import CompanyInvitation
 from .company_member import CompanyMember
 from .company_request import CompanyRequest
+from .question import Question
+from .quiz import Quiz
 from .user import User
 
 __all__ = [
@@ -13,4 +16,7 @@ __all__ = [
     "CompanyInvitation",
     "CompanyMember",
     "CompanyRequest",
+    "Quiz",
+    "Question",
+    "Answer",
 ]

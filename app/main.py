@@ -7,11 +7,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.exception_handlers import register_exception_handlers
 from app.core.logging_config import logging_config
+from app.routers.answer import router as answer_router
 from app.routers.company import router as company_router
 from app.routers.company_invitation import router as company_invitation_router
 from app.routers.company_request import router as company_request_router
 from app.routers.healthcheck import router as health_router
 from app.routers.me import router as me_router
+from app.routers.question import router as question_router
+from app.routers.quiz import router as quiz_router
 from app.routers.user import router as users_router
 
 logger = logging.getLogger(__name__)
@@ -35,7 +38,9 @@ app.include_router(users_router)
 app.include_router(company_router)
 app.include_router(company_invitation_router)
 app.include_router(company_request_router)
+app.include_router(quiz_router)
+app.include_router(question_router)
+app.include_router(answer_router)
 app.include_router(health_router)
-
 if __name__ == "__main__":
     uvicorn.run(app, host=settings.host, port=settings.port)

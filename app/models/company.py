@@ -18,6 +18,7 @@ class Company(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     owner = relationship("User", back_populates="owned_companies")
-    invitations = relationship("CompanyInvitation", back_populates="company")
-    members = relationship("CompanyMember", back_populates="company")
-    requests = relationship("CompanyRequest", back_populates="company")
+    invitations = relationship("CompanyInvitation", back_populates="company", cascade="all, delete-orphan")
+    members = relationship("CompanyMember", back_populates="company", cascade="all, delete-orphan")
+    requests = relationship("CompanyRequest", back_populates="company", cascade="all, delete-orphan")
+    quizzes = relationship("Quiz", back_populates="company", cascade="all, delete-orphan")

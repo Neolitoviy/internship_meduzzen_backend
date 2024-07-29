@@ -30,3 +30,4 @@ class User(Base):
     )
     company_memberships = relationship("CompanyMember", back_populates="user")
     company_requests = relationship("CompanyRequest", back_populates="requested_user")
+    quizzes = relationship("Quiz", back_populates="user")
