@@ -69,3 +69,17 @@ services:
       - REDIS_PORT
     depends_on:
       - celery
+
+  db-client:
+    image: postgres:latest
+    command: [ "psql", "-h", "be19db.c38keuoas3pn.us-east-1.rds.amazonaws.com", "-p", "5432", "-U", "postgres", "-d", "BE19" ]
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASS}
+    stdin_open: true
+    tty: true
+
+  redis-client:
+    image: redis:latest
+    command: [ "redis-cli", "-h", "be19redis-ogxw1i.serverless.use1.cache.amazonaws.com", "-p", "6379" ]
+    stdin_open: true
+    tty: true
