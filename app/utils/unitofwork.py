@@ -8,6 +8,7 @@ from app.repositories.company_member import CompanyMemberRepository
 from app.repositories.company_request import CompanyRequestRepository
 from app.repositories.question import QuestionRepository
 from app.repositories.quiz import QuizRepository
+from app.repositories.quiz_result import QuizResultRepository
 from app.repositories.user import UserRepository
 
 
@@ -20,6 +21,7 @@ class IUnitOfWork(ABC):
     quizzes: QuizRepository
     questions: QuestionRepository
     answers: AnswerRepository
+    quiz_results: QuizResultRepository
 
     @abstractmethod
     def __init__(self): ...
@@ -51,6 +53,7 @@ class UnitOfWork(IUnitOfWork):
         self.quizzes = QuizRepository(self.session)
         self.questions = QuestionRepository(self.session)
         self.answers = AnswerRepository(self.session)
+        self.quiz_results = QuizResultRepository(self.session)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):

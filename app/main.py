@@ -15,6 +15,7 @@ from app.routers.healthcheck import router as health_router
 from app.routers.me import router as me_router
 from app.routers.question import router as question_router
 from app.routers.quiz import router as quiz_router
+from app.routers.quiz_result import router as quiz_result_router
 from app.routers.user import router as users_router
 
 logger = logging.getLogger(__name__)
@@ -41,6 +42,8 @@ app.include_router(company_request_router)
 app.include_router(quiz_router)
 app.include_router(question_router)
 app.include_router(answer_router)
+app.include_router(quiz_result_router)
 app.include_router(health_router)
+
 if __name__ == "__main__":
     uvicorn.run(app, host=settings.host, port=settings.port)
