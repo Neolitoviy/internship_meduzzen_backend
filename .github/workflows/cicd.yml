@@ -33,10 +33,10 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v1
 
       - name: Build Docker image
-        run: docker build -t ${{ secrets.ECR_REPOSITORY_URI }}:latest .
+        run: docker build -t ${{ secrets.ECR_REPOSITORY_URI }}:${{ env.IMAGE_TAG }} .
 
       - name: Push Docker image to ECR
-        run: docker push ${{ secrets.ECR_REPOSITORY_URI }}:latest
+        run: docker push ${{ secrets.ECR_REPOSITORY_URI }}:${{ env.IMAGE_TAG }}
 
   deploy:
     runs-on: ubuntu-latest
@@ -53,10 +53,11 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           envs: |
-            TAG=${IMAGE_TAG}
+            TAG=${{ env.IMAGE_TAG }}
             AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
             AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
             AWS_REGION=${{ secrets.AWS_REGION }}
+            ECR_REPOSITORY=${{ secrets.ECR_REPOSITORY_URI }}
           script: |
             echo "AWS CLI version: $(aws --version)"
             echo "Docker version: $(docker --version)"
@@ -73,15 +74,15 @@ jobs:
             export AWS_REGION=${AWS_REGION}
 
             echo "Logging in to ECR...."
-            aws ecr get-login-password --region $AWS_REGION | sudo docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY_URI }}
+            aws ecr get-login-password --region $AWS_REGION | sudo docker login --username AWS --password-stdin $ECR_REPOSITORY
             echo "Logged in successful..."
 
             echo "Pulling image from ECR..."
-            sudo docker pull "${{ secrets.ECR_REPOSITORY_URI }}:${IMAGE_TAG}"
+            sudo docker pull "${ECR_REPOSITORY}:${TAG}"
             echo "Docker pull completed..."
 
             echo "Running the container..."
             sudo docker run -d \
               --name myappcontainer \
               --env-file /path/to/dot/env \
-              -p ${{ secrets.EXPOSED_PORT }}:${{ secrets.APPLICATION_PORT }} "${{ secrets.ECR_REPOSITORY_URI }}:${IMAGE_TAG}"
+              -p 80:8000 "${ECR_REPOSITORY}:${TAG}"
