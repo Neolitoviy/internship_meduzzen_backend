@@ -63,10 +63,10 @@ jobs:
             echo "Docker version: $(docker --version)"
             
             echo "Stop the current running container if exist..."
-            sudo docker stop myappcontainer || true
+            sudo docker stop container_name || true
 
             echo "Remove the previous container..."
-            sudo docker rm myappcontainer || true
+            sudo docker rm container_name || true
 
             echo "List Docker containers after removal..."
             sudo docker ps -a
@@ -86,7 +86,7 @@ jobs:
 
             echo "Running the container..."
             sudo docker run -d \
-              --name myappcontainer \
+              --name container_name \
               -p 80:8000 "$ECR_REPOSITORY:$TAG"
 
             echo "List running Docker containers after deployment..."
