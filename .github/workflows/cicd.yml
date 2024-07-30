@@ -1,14 +1,9 @@
-name: CI/CD Pipeline
+name: FastAPI Deployment
 
 on:
   push:
     branches:
       - be_20_add_github_actions
-
-env:
-  AWS_REGION: ${{ secrets.AWS_REGION }}  # AWS region
-  ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_URI }}  # Amazon ECR repository URI
-  IMAGE_TAG: latest  # Docker image tag
 
 jobs:
   build:
@@ -46,6 +41,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
+      - name: Copy docker-compose.yml to EC2
+        run: |
+          echo "$EC2_SSH_KEY" > /tmp/ec2-key.pem
+          chmod 600 /tmp/ec2-key.pem
+          scp -o StrictHostKeyChecking=no -i /tmp/ec2-key.pem docker-compose.yml $EC2_USER@$EC2_HOST:/home/$EC2_USER/docker-compose.yml
+
       - name: Deploy to EC2
         env:
           EC2_HOST: ${{ secrets.EC2_PUBLIC_IP }}
@@ -59,11 +60,11 @@ jobs:
 
           ssh -o StrictHostKeyChecking=no -i /tmp/ec2-key.pem $EC2_USER@$EC2_HOST <<EOF
               echo "Pulling Docker image from ECR..."
-              docker pull ${{ secrets.ECR_REPOSITORY_URI }}:${TAG}
+              docker pull ${{ secrets.ECR_REPOSITORY_URI }}:${IMAGE_TAG}
 
               echo "Stopping and removing existing containers..."
               docker-compose down || true
 
               echo "Running Docker Compose..."
               docker-compose up -d --build
-            EOF
+          EOF
