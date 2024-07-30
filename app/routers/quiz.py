@@ -70,7 +70,7 @@ async def delete_quiz(
 
 
 @router.get(
-    "/quiz/{quiz_id}",
+    "/{quiz_id}",
     response_model=List[QuestionSchemaResponse],
     status_code=status.HTTP_200_OK,
 )
