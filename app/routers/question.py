@@ -16,8 +16,8 @@ from app.schemas.question import (
 )
 
 router = APIRouter(
-    prefix="/question",
-    tags=["Question"],
+    prefix="/questions",
+    tags=["Questions"],
 )
 
 
