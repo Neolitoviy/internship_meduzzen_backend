@@ -58,11 +58,12 @@ jobs:
           chmod 600 /tmp/ec2-key.pem
 
           ssh -o StrictHostKeyChecking=no -i /tmp/ec2-key.pem $EC2_USER@$EC2_HOST <<EOF
-            docker pull $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-            docker stop app celery_worker celery_beat flower  true
-            docker rm app celery_worker celery_beat flower  true
-            docker run -d --name app -p 8000:8000 $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-            docker run -d --name celery_worker $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG celery -A app.celery:celery worker --loglevel=info
-            docker run -d --name celery_beat $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG celery -A app.celery:celery beat --loglevel=info
-            docker run -d --name flower -p 5555:5555 $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG celery -A app.celery:celery flower --port=5555
-          EOF
+              echo "Pulling Docker image from ECR..."
+              docker pull ${{ secrets.ECR_REPOSITORY_URI }}:${TAG}
+
+              echo "Stopping and removing existing containers..."
+              docker-compose down || true
+
+              echo "Running Docker Compose..."
+              docker-compose up -d --build
+            EOF
