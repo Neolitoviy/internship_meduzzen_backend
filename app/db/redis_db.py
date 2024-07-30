@@ -10,8 +10,7 @@ logger = logging.getLogger(__name__)
 async def get_redis_client():
     return redis.Redis(
         host=settings.redis_host,
-        port=int(settings.redis_port),
-        ssl=True
+        port=int(settings.redis_port)
     )
 
 
