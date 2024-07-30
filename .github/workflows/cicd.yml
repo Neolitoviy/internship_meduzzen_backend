@@ -3,15 +3,18 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - BE-20-add-github-actions
+      - be_20_add_github_actions
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+
+      - name: Rename .env.sample to .env
+        run: mv .env.sample .env
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -20,50 +23,36 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Login to Amazon ECR
+      - name: Log in to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Get commit hash
-        id: get-commit-hash
-        run: echo "commit-hash=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+      - name: Build Docker image
+        run: docker build -t ${{ secrets.ECR_REPOSITORY_URI }}:latest .
 
-      - name: Get timestamp
-        id: get-timestamp
-        run: echo "timestamp=$(date +'%Y-%m-%d-%H-%M')" >> $GITHUB_ENV
+      - name: Push Docker image to ECR
+        run: docker push ${{ secrets.ECR_REPOSITORY_URI }}:latest
 
-      - name: Build and push the image to Amazon ECR
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-          IMAGE_TAG: ${{ env.commit-hash }}-${{ env.timestamp }}
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up SSH
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "${{ secrets.EC2_SSH_KEY }}" > /tmp/ssh_key
+          chmod 600 /tmp/ssh_key
+        shell: bash
 
       - name: Deploy to EC2
-        env:
-          EC2_HOST: ${{ secrets.AWS_EC2_HOST }}
-          EC2_USER: ubuntu
-          EC2_SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-          IMAGE_TAG: ${{ env.commit-hash }}-${{ env.timestamp }}
         run: |
-          echo "$EC2_SSH_KEY" > /tmp/ec2-key.pem
-          chmod 600 /tmp/ec2-key.pem
-
-          ssh -o StrictHostKeyChecking=no -i /tmp/ec2-key.pem $EC2_USER@$EC2_HOST <<EOF
-            sudo yum update -y
-            sudo yum install docker -y
-            sudo systemctl start docker
-            sudo yum install aws-cli -y
-            docker login -u AWS -p \$(aws ecr get-login-password --region $AWS_REGION) $ECR_REGISTRY
-            docker pull $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-            docker stop app celery_worker celery_beat flower || true
-            docker rm app celery_worker celery_beat flower || true
-            docker run -d --name app -p 8010:8000 $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-            docker run -d --name celery_worker $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG celery -A app.celery:celery worker --loglevel=info
-            docker run -d --name celery_beat $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG celery -A app.celery:celery beat --loglevel=info
-            docker run -d --name flower -p 5555:5555 $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG celery -A app.celery:celery flower --port=5555
+          ssh -o StrictHostKeyChecking=no -i /tmp/ssh_key ec2-user@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
+            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY_URI }}
+            docker pull ${{ secrets.ECR_REPOSITORY_URI }}:latest
+            docker-compose down
+            docker-compose up -d
           EOF
+        shell: bash
