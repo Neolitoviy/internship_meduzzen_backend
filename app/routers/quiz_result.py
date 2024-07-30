@@ -6,8 +6,8 @@ from app.routers.dependencies import CurrentUserDep, QuizResultServiceDep, UOWDe
 from app.schemas.quiz_result import QuizResultResponse, QuizVoteRequest, UserQuizVote
 
 router = APIRouter(
-    prefix="/quiz-result",
-    tags=["QuizResult"],
+    prefix="/quiz-results",
+    tags=["QuizResults"],
 )
 
 
