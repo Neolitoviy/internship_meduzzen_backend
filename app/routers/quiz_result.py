@@ -29,7 +29,7 @@ async def quiz_vote(
     )
 
 
-@router.get("/average-score/user/{user_id}", response_model=float)
+@router.get("/users/{user_id}/score", response_model=float)
 async def get_user_average_score(
     user_id: int,
     company_id: int,
@@ -42,7 +42,7 @@ async def get_user_average_score(
     )
 
 
-@router.get("/average-score/company/{company_id}", response_model=float)
+@router.get("/companies/{company_id}/score", response_model=float)
 async def get_company_average_score(
     company_id: int,
     uow: UOWDep,
@@ -54,7 +54,7 @@ async def get_company_average_score(
     )
 
 
-@router.get("/get-vote-redis")
+@router.get("/vote-redis")
 async def get_vote_redis(
     user_id: int,
     company_id: int,
@@ -69,7 +69,7 @@ async def get_vote_redis(
     )
 
 
-@router.get("/get-quiz-votes-redis", response_model=List[UserQuizVote])
+@router.get("/quiz-votes-redis", response_model=List[UserQuizVote])
 async def get_quiz_votes_redis(
     user_id: int,
     company_id: int,
