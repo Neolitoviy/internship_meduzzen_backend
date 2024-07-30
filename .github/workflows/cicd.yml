@@ -1,9 +1,14 @@
-name: FastAPI Deployment
+name: CI/CD Pipeline
 
 on:
   push:
     branches:
       - be_20_add_github_actions
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}  # AWS region
+  ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_URI }}  # Amazon ECR repository URI
+  IMAGE_TAG: latest  # Docker image tag
 
 jobs:
   build:
