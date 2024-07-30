@@ -5,6 +5,11 @@ on:
     branches:
       - be_20_add_github_actions
 
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}                 # AWS region
+  ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_URI }}     # Amazon ECR repository URI
+  IMAGE_TAG: latest                                     # Docker image tag
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -21,17 +26,21 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
 
-      - name: Log in to Amazon ECR
+      - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Build Docker image
-        run: docker build -t ${{ secrets.ECR_REPOSITORY_URI }}:latest .
-
-      - name: Push Docker image to ECR
-        run: docker push ${{ secrets.ECR_REPOSITORY_URI }}:latest
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
   deploy:
     runs-on: ubuntu-latest
@@ -48,11 +57,21 @@ jobs:
         shell: bash
 
       - name: Deploy to EC2
-        run: |
-          ssh -o StrictHostKeyChecking=no -i /tmp/ssh_key ec2-user@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
-            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY_URI }}
-            docker pull ${{ secrets.ECR_REPOSITORY_URI }}:latest
-            docker-compose down
-            docker-compose up -d
-          EOF
-        shell: bash
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_PUBLIC_IP }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            sudo yum update -y
+            sudo yum install docker -y
+            sudo systemctl start docker
+            sudo yum install aws-cli -y
+            aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+            aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            aws configure set default.region ${{ secrets.AWS_REGION }}
+            docker login -u AWS -p $(aws ecr get-login-password --region ${{ secrets.AWS_REGION }}) ${{ secrets.ECR_REPOSITORY_URI }}
+            sudo docker pull ${{ secrets.ECR_REPOSITORY_URI }}:latest
+            sudo docker stop myappcontainer || true
+            sudo docker rm myappcontainer || true
+            sudo docker run -d --name myappcontainer -p 80:8000 ${{ secrets.ECR_REPOSITORY_URI }}:latest
