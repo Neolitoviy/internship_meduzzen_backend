@@ -82,6 +82,13 @@ Here you can see the available endpoint and test the GET / endpoint directly fro
 
 ### 1. Run Tests
 
+My Coverage html report:
+
+![image](https://github.com/user-attachments/assets/c14c1b14-1386-496c-b071-71ecf4fbe6b7)
+![image](https://github.com/user-attachments/assets/86c46076-769c-4fc0-8b5b-9f7a6d68370e)
+![image](https://github.com/user-attachments/assets/0c19618c-3e07-443d-b30a-edcbc16ee7bd)
+![image](https://github.com/user-attachments/assets/e3829866-e931-47c7-a827-30d43b551a35)
+
 Run the tests using the following command:
 
 ```bash
