@@ -45,11 +45,12 @@ jobs:
           REPOSITORY: myapprepository
           IMAGE_TAG: latest
           AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         with:
           host: ${{ secrets.EC2_PUBLIC_IP }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
-          envs: REGISTRY,REPOSITORY,IMAGE_TAG,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_DEFAULT_REGION
           script: |
             sudo yum update -y
             sudo yum install docker -y
@@ -58,10 +59,7 @@ jobs:
             echo $AWS_ACCESS_KEY_ID
             echo $AWS_SECRET_ACCESS_KEY
             echo $AWS_DEFAULT_REGION
-            aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
-            aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
-            aws configure set default.region $AWS_DEFAULT_REGION
-            sudo $(aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REGISTRY)
+            docker login -u AWS -p $(aws ecr get-login-password --region $AWS_DEFAULT_REGION --profile default) $REGISTRY
             sudo docker pull $REGISTRY:$IMAGE_TAG
             sudo docker stop myappcontainer || true
             sudo docker rm myappcontainer || true
