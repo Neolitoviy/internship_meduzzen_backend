@@ -1,8 +1,16 @@
+from datetime import datetime
 from typing import List
 
 from fastapi import APIRouter, Response, status
 
 from app.routers.dependencies import CurrentUserDep, QuizResultServiceDep, UOWDep
+from app.schemas.analytics import (
+    CompanyMemberAverageScore,
+    CompanyUserLastAttempt,
+    LastQuizAttempt,
+    QuizScore,
+    QuizTrend,
+)
 from app.schemas.quiz_result import QuizResultResponse, QuizVoteRequest, UserQuizVote
 
 router = APIRouter(
@@ -42,15 +50,96 @@ async def get_user_average_score(
     )
 
 
-@router.get("/companies/{company_id}/score", response_model=float)
-async def get_company_average_score(
+@router.get(
+    "/companies/{company_id}/users/{user_id}/score",
+    response_model=float,
+)
+async def get_user_company_average_score(
+    user_id: int,
     company_id: int,
     uow: UOWDep,
     quiz_result_service: QuizResultServiceDep,
     current_user: CurrentUserDep,
 ):
     return await quiz_result_service.get_company_average_score(
-        uow, company_id, current_user.id
+        uow, user_id, company_id, current_user.id
+    )
+
+
+@router.get("/user/quiz-scores", response_model=List[QuizScore])
+async def get_user_quiz_scores(
+    current_user: CurrentUserDep,
+    uow: UOWDep,
+    service: QuizResultServiceDep,
+    skip: int = 0,
+    limit: int = 10,
+):
+    return await service.get_user_quiz_scores(uow, current_user.id, skip, limit)
+
+
+@router.get("/user/last-quiz-attempts", response_model=List[LastQuizAttempt])
+async def get_user_last_quiz_attempts(
+    current_user: CurrentUserDep,
+    uow: UOWDep,
+    service: QuizResultServiceDep,
+    skip: int = 0,
+    limit: int = 10,
+):
+    return await service.get_user_last_quiz_attempts(uow, current_user.id, skip, limit)
+
+
+@router.get(
+    "/companies/{company_id}/members-average-scores",
+    response_model=List[CompanyMemberAverageScore],
+)
+async def get_company_members_average_scores(
+    company_id: int,
+    start_date: datetime,
+    end_date: datetime,
+    current_user: CurrentUserDep,
+    uow: UOWDep,
+    service: QuizResultServiceDep,
+    skip: int = 0,
+    limit: int = 10,
+):
+    return await service.get_company_members_average_scores_over_time(
+        uow, company_id, start_date, end_date, current_user.id, skip, limit
+    )
+
+
+@router.get(
+    "/companies/{company_id}/user/{user_id}/quiz-trends", response_model=List[QuizTrend]
+)
+async def get_user_quiz_trends(
+    company_id: int,
+    user_id: int,
+    start_date: datetime,
+    end_date: datetime,
+    current_user: CurrentUserDep,
+    uow: UOWDep,
+    service: QuizResultServiceDep,
+    skip: int = 0,
+    limit: int = 10,
+):
+    return await service.get_user_quiz_trends(
+        uow, company_id, user_id, start_date, end_date, current_user.id, skip, limit
+    )
+
+
+@router.get(
+    "/companies/{company_id}/user-last-attempts",
+    response_model=List[CompanyUserLastAttempt],
+)
+async def get_company_user_last_attempts(
+    company_id: int,
+    current_user: CurrentUserDep,
+    uow: UOWDep,
+    service: QuizResultServiceDep,
+    skip: int = 0,
+    limit: int = 10,
+):
+    return await service.get_company_user_last_attempts(
+        uow, company_id, current_user.id, skip, limit
     )
 
 

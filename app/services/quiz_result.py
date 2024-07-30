@@ -5,6 +5,13 @@ from io import StringIO
 from typing import List
 
 from app.db.redis_db import get_redis_client
+from app.schemas.analytics import (
+    CompanyMemberAverageScore,
+    CompanyUserLastAttempt,
+    LastQuizAttempt,
+    QuizScore,
+    QuizTrend,
+)
 from app.schemas.quiz_result import QuizResultResponse, QuizVoteRequest, UserQuizVote
 from app.services.company import CompanyService
 from app.utils.unitofwork import IUnitOfWork
@@ -57,25 +64,177 @@ class QuizResultService:
             )
             return QuizResultResponse.model_validate(quiz_result)
 
-    @staticmethod
+    @staticmethod  # Already done BE 15 1 1 in previous tasks
     async def get_user_average_score(
         uow: IUnitOfWork, user_id: int, company_id: int, current_user_id: int
     ) -> float:
         async with uow:
             await CompanyService.check_company_permission(
-                uow, company_id, current_user_id, is_admin=True
+                uow, company_id, current_user_id
             )
             return await uow.quiz_results.get_average_score(user_id=user_id)
 
     @staticmethod
     async def get_company_average_score(
-        uow: IUnitOfWork, company_id: int, current_user_id: int
+        uow: IUnitOfWork, user_id: int, company_id: int, current_user_id: int
     ) -> float:
+        async with uow:
+            await CompanyService.check_company_permission(
+                uow, company_id, current_user_id
+            )
+            return await uow.quiz_results.get_average_score(
+                user_id=user_id, company_id=company_id
+            )
+
+    @staticmethod  # BE 15 1 2
+    async def get_user_quiz_scores(
+        uow: IUnitOfWork, user_id: int, skip: int, limit: int
+    ) -> List[QuizScore]:
+        async with uow:
+            results = await uow.quiz_results.find_all(
+                user_id=user_id, skip=skip, limit=limit
+            )
+            quiz_scores = {}
+            for result in results:
+                quiz = await uow.quizzes.find_one(id=result.quiz_id)
+                quiz_id = result.quiz_id
+                if quiz_id not in quiz_scores:  # Each means unique quiz_id
+                    quiz_scores[quiz_id] = {
+                        "quiz_id": quiz_id,
+                        "quiz_title": quiz.title,
+                        "scores": [],
+                        "timestamps": [],
+                    }
+                quiz_scores[quiz_id]["scores"].append(
+                    result.score
+                )  # List of average score for Each quiz
+                quiz_scores[quiz_id]["timestamps"].append(
+                    result.created_at
+                )  # Time ranges
+            return [QuizScore.model_validate(data) for data in quiz_scores.values()]
+
+    @staticmethod  # BE 15 1 3
+    async def get_user_last_quiz_attempts(
+        uow: IUnitOfWork, user_id: int, skip: int, limit: int
+    ) -> List[LastQuizAttempt]:
+        async with uow:
+            results = await uow.quiz_results.find_all(
+                user_id=user_id, skip=skip, limit=limit
+            )
+            last_attempts = {}
+            for result in results:
+                quiz_id = result.quiz_id
+                if (
+                    quiz_id not in last_attempts
+                    or result.created_at > last_attempts[quiz_id]["timestamp"]
+                ):
+                    last_attempts[quiz_id] = {
+                        "quiz_id": quiz_id,
+                        "timestamp": result.created_at,
+                    }
+            return [
+                LastQuizAttempt.model_validate(data) for data in last_attempts.values()
+            ]
+
+    @staticmethod  # BE 15 2 1
+    async def get_company_members_average_scores_over_time(
+        uow: IUnitOfWork,
+        company_id: int,
+        start_date: datetime,
+        end_date: datetime,
+        current_user_id: int,
+        skip: int,
+        limit: int,
+    ) -> List[CompanyMemberAverageScore]:
         async with uow:
             await CompanyService.check_company_permission(
                 uow, company_id, current_user_id, is_admin=True
             )
-            return await uow.quiz_results.get_average_score(company_id=company_id)
+
+            member_scores = await uow.quiz_results.get_company_members_average_scores(
+                company_id, start_date, end_date, skip, limit
+            )
+            return [
+                CompanyMemberAverageScore.model_validate(
+                    {
+                        "user_id": score.user_id,
+                        "average_score": round(score.average_score, 2),
+                        "start_date": score.start_date,
+                        "end_date": score.end_date,
+                    }
+                )
+                for score in member_scores
+            ]
+
+    @staticmethod  # BE 15 2 2
+    async def get_user_quiz_trends(
+        uow: IUnitOfWork,
+        company_id: int,
+        user_id: int,
+        start_date: datetime,
+        end_date: datetime,
+        current_user_id: int,
+        skip: int,
+        limit: int,
+    ) -> List[QuizTrend]:
+        async with uow:
+            await CompanyService.check_company_permission(
+                uow, company_id, current_user_id, is_admin=True
+            )
+
+            quiz_trends = await uow.quiz_results.get_quiz_trends_by_date_range(
+                user_id, start_date, end_date, skip, limit
+            )
+            quiz_trends_with_averages = []
+            for trend in quiz_trends:
+                quiz = await uow.quizzes.find_one(id=trend.quiz_id)
+                quiz_trends_with_averages.append(
+                    {
+                        "quiz_id": trend.quiz_id,
+                        "quiz_title": quiz.title,
+                        "average_score": round(trend.average_score, 2),
+                        "start_date": trend.start_date,
+                        "end_date": trend.end_date,
+                    }
+                )
+
+            return [
+                QuizTrend.model_validate(data) for data in quiz_trends_with_averages
+            ]
+
+    @staticmethod  # BE 15 2 3
+    async def get_company_user_last_attempts(
+        uow: IUnitOfWork,
+        company_id: int,
+        requesting_user_id: int,
+        skip: int,
+        limit: int,
+    ) -> List[CompanyUserLastAttempt]:
+        async with uow:
+            await CompanyService.check_company_permission(
+                uow, company_id, requesting_user_id, is_admin=True
+            )
+
+            members = await uow.company_members.find_all(
+                company_id=company_id, skip=skip, limit=limit
+            )
+            user_last_attempts = []
+            for member in members:
+                last_attempt = await uow.quiz_results.find_last_attempt_with_filter(
+                    user_id=member.user_id
+                )
+                user_last_attempts.append(
+                    {
+                        "user_id": member.user_id,
+                        "last_attempt": (
+                            last_attempt.created_at if last_attempt else None
+                        ),
+                    }
+                )
+            return [
+                CompanyUserLastAttempt.model_validate(data)
+                for data in user_last_attempts
+            ]
 
     @staticmethod
     async def save_quiz_vote_to_redis(vote: UserQuizVote) -> None:
