@@ -61,12 +61,18 @@ jobs:
           script: |
             echo "AWS CLI version: $(aws --version)"
             echo "Docker version: $(docker --version)"
+            
+            echo "List running Docker containers..."
+            sudo docker ps -a
 
             echo "Stop the current running container if exist..."
             sudo docker stop myappcontainer || true
 
             echo "Remove the previous container..."
             sudo docker rm myappcontainer || true
+
+            echo "List Docker containers after removal..."
+            sudo docker ps -a
 
             echo "AWS credentials set...."
             export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
@@ -84,5 +90,7 @@ jobs:
             echo "Running the container..."
             sudo docker run -d \
               --name myappcontainer \
-              --env-file /path/to/dot/env \
               -p 80:8000 "${ECR_REPOSITORY}:${TAG}"
+
+            echo "List running Docker containers after deployment..."
+            sudo docker ps -a
