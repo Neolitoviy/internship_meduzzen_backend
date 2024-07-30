@@ -56,10 +56,12 @@ jobs:
           AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
         run: |
           ssh -o StrictHostKeyChecking=no -i /tmp/ssh_key ec2-user@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
-            sudo apt update
-            sudo apt install docker.io -y
-            sudo apt install awscli -y
-            sudo $(aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REGISTRY)
+            sudo yum update -y
+            sudo yum install docker -y
+            sudo amazon-linux-extras install docker
+            sudo service docker start
+            sudo yum install aws-cli -y
+            $(aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REGISTRY)
             sudo docker pull $REGISTRY:$IMAGE_TAG
             sudo docker stop myappcontainer || true
             sudo docker rm myappcontainer || true
