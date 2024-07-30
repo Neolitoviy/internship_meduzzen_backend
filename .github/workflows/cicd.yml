@@ -33,34 +33,42 @@ jobs:
       - name: Push Docker image to ECR
         run: docker push ${{ secrets.ECR_REPOSITORY_URI }}:latest
 
+      - name: Get commit hash
+        id: get-commit-hash
+        run: echo "commit-hash=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
+      - name: Get timestamp
+        id: get-timestamp
+        run: echo "timestamp=$(date +%Y%m%d%H%M%S)" >> $GITHUB_ENV
+
   deploy:
     runs-on: ubuntu-latest
     needs: build
 
     steps:
-      - name: Deploy docker image to EC2
-        uses: appleboy/ssh-action@master
+      - name: Deploy to EC2
         env:
-          REGISTRY: ${{ secrets.ECR_REPOSITORY_URI }}
-          REPOSITORY: myapprepository
-          IMAGE_TAG: latest
-          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        with:
-          host: ${{ secrets.EC2_PUBLIC_IP }}
-          username: ec2-user
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
+          EC2_HOST: ${{ secrets.EC2_PUBLIC_IP }}
+          EC2_USER: ec2-user
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+          ECR_REGISTRY: ${{ secrets.ECR_REPOSITORY_URI }}
+          ECR_REPOSITORY: myapprepository
+          IMAGE_TAG: ${{ steps.get-commit-hash.outputs.commit-hash }}-${{ steps.get-timestamp.outputs.timestamp }}
+        run: |
+          echo "$EC2_SSH_KEY" > /tmp/ec2-key.pem
+          chmod 600 /tmp/ec2-key.pem
+
+          ssh -o StrictHostKeyChecking=no -i /tmp/ec2-key.pem $EC2_USER@$EC2_HOST <<EOF
             sudo yum update -y
             sudo yum install docker -y
             sudo systemctl start docker
             sudo yum install aws-cli -y
-            echo $AWS_ACCESS_KEY_ID
-            echo $AWS_SECRET_ACCESS_KEY
-            echo $AWS_DEFAULT_REGION
-            docker login -u AWS -p $(aws ecr get-login-password --region $AWS_DEFAULT_REGION --profile default) $REGISTRY
-            sudo docker pull $REGISTRY:$IMAGE_TAG
-            sudo docker stop myappcontainer || true
-            sudo docker rm myappcontainer || true
-            sudo docker run -d --name myappcontainer -p 80:8000 $REGISTRY:$IMAGE_TAG
+            docker login -u AWS -p $(aws ecr get-login-password --region ${AWS_DEFAULT_REGION}) ${ECR_REGISTRY}
+            docker pull ${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}
+            docker stop app celery_worker celery_beat flower || true
+            docker rm app celery_worker celery_beat flower || true
+            docker run -d --name app -p 8010:8000 ${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}
+            docker run -d --name celery_worker ${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG} celery -A app.celery:celery worker --loglevel=info
+            docker run -d --name celery_beat ${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG} celery -A app.celery:celery beat --loglevel=info
+            docker run -d --name flower -p 5555:5555 ${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG} celery -A app.celery:celery flower --port=5555
+          EOF
