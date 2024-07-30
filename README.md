@@ -351,7 +351,7 @@ http://127.0.0.1:5555
 
 ### 4. Create an ElastiCache Instance and Connect to RDS Security Group
 1. Visit [ElastiCache Dashboard](https://us-east-1.console.aws.amazon.com/elasticache/home?region=us-east-1).
-2. Create a new ElastiCache cluster.
+2. Create a new ElastiCache no-cluster(because we use celery).
 3. Connect the ElastiCache instance to the RDS security group.
 
 ### 5. Set Key Permissions
