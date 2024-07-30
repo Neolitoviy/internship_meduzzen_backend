@@ -5,6 +5,11 @@ on:
     branches:
       - be_20_add_github_actions
 
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}  # AWS region
+  ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_URI }}  # Amazon ECR repository URI
+  IMAGE_TAG: latest  # Docker image tag
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -21,9 +26,9 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
 
-      - name: Log in to Amazon ECR
+      - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
@@ -41,18 +46,42 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Set up SSH
-        run: |
-          echo "${{ secrets.EC2_SSH_KEY }}" > /tmp/ssh_key
-          chmod 600 /tmp/ssh_key
-        shell: bash
+      - name: SSH into EC2 instance and deploy
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_PUBLIC_IP }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          envs: |
+            TAG=${IMAGE_TAG}
+            AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+            AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            AWS_REGION=${{ secrets.AWS_REGION }}
+          script: |
+            echo "AWS CLI version: $(aws --version)"
+            echo "Docker version: $(docker --version)"
 
-      - name: Deploy to EC2
-        run: |
-          ssh -o StrictHostKeyChecking=no -i /tmp/ssh_key ec2-user@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
-            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY_URI }}
-            docker pull ${{ secrets.ECR_REPOSITORY_URI }}:latest
-            docker-compose down
-            docker-compose up -d
-          EOF
-        shell: bash
+            echo "Stop the current running container if exist..."
+            sudo docker stop myappcontainer || true
+
+            echo "Remove the previous container..."
+            sudo docker rm myappcontainer || true
+
+            echo "AWS credentials set...."
+            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+            export AWS_REGION=${AWS_REGION}
+
+            echo "Logging in to ECR...."
+            aws ecr get-login-password --region $AWS_REGION | sudo docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY_URI }}
+            echo "Logged in successful..."
+
+            echo "Pulling image from ECR..."
+            sudo docker pull "${{ secrets.ECR_REPOSITORY_URI }}:${IMAGE_TAG}"
+            echo "Docker pull completed..."
+
+            echo "Running the container..."
+            sudo docker run -d \
+              --name myappcontainer \
+              --env-file /path/to/dot/env \
+              -p ${{ secrets.EXPOSED_PORT }}:${{ secrets.APPLICATION_PORT }} "${{ secrets.ECR_REPOSITORY_URI }}:${IMAGE_TAG}"
