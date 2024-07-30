@@ -27,8 +27,8 @@ from app.schemas.company_request import CompanyRequestCreate, CompanyRequestResp
 logger = logging.getLogger(__name__)
 
 router = APIRouter(
-    prefix="/company",
-    tags=["Company"],
+    prefix="/companies",
+    tags=["Companies"],
 )
 
 
@@ -167,7 +167,7 @@ async def remove_member(
     return await service.remove_member(uow, member_id, current_user.id)
 
 
-@router.post("/{company_id}/admin/{user_id}/appoint", status_code=status.HTTP_200_OK)
+@router.post("/{company_id}/admins/{user_id}/appoint", status_code=status.HTTP_200_OK)
 async def appoint_admin(
     company_id: int,
     user_id: int,
@@ -179,7 +179,7 @@ async def appoint_admin(
     return {"detail": "User appointed as admin successfully"}
 
 
-@router.post("/{company_id}/admin/{user_id}/remove", status_code=status.HTTP_200_OK)
+@router.post("/{company_id}/admins/{user_id}/remove", status_code=status.HTTP_200_OK)
 async def remove_admin(
     company_id: int,
     user_id: int,
