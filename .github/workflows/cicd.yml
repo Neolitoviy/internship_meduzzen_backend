@@ -46,48 +46,60 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: SSH into EC2 instance and deploy
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.EC2_PUBLIC_IP }}
-          username: ec2-user
-          key: ${{ secrets.EC2_SSH_KEY }}
-          envs: |
-            TAG=${{ env.IMAGE_TAG }}
-            AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
-            AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
-            AWS_REGION=${{ secrets.AWS_REGION }}
-            ECR_REPOSITORY=${{ secrets.ECR_REPOSITORY_URI }}
-          script: |
-            echo "AWS CLI version: $(aws --version)"
-            echo "Docker version: $(docker --version)"
+      - name: Deploy to EC2
+        env:
+          EC2_HOST: ${{ secrets.EC2_PUBLIC_IP }}
+          EC2_USER: ec2-user
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_URI }}
+          IMAGE_TAG: latest
+        run: |
+          echo "$EC2_SSH_KEY" > /tmp/ec2-key.pem
+          chmod 600 /tmp/ec2-key.pem
+
+          ssh -o StrictHostKeyChecking=no -i /tmp/ec2-key.pem $EC2_USER@$EC2_HOST <<EOF
+            echo "AWS CLI version: \$(aws --version)"
+            echo "Docker version: \$(docker --version)"
             
             echo "Stop the current running container if exist..."
-            sudo docker stop container_name || true
-
-            echo "Remove the previous container..."
-            sudo docker rm container_name || true
+            if sudo docker ps -a --format '{{.Names}}' | grep -Eq "^myappcontainer\$"; then
+              sudo docker stop myappcontainer
+              sudo docker rm myappcontainer
+            else
+              echo "Container myappcontainer does not exist."
+            fi
 
             echo "List Docker containers after removal..."
             sudo docker ps -a
 
-            echo "AWS credentials set...."
-            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-            export AWS_REGION=${AWS_REGION}
-
             echo "Logging in to ECR...."
             sudo aws ecr get-login-password --region $AWS_REGION | sudo docker login --username AWS --password-stdin $ECR_REPOSITORY
-            echo "Logged in successful..."
+            if [ $? -eq 0 ]; then
+              echo "Logged in successfully to ECR."
+            else
+              echo "Failed to log in to ECR."
+              exit 1
+            fi
 
             echo "Pulling image from ECR..."
-            sudo docker pull "$ECR_REPOSITORY:$TAG"
-            echo "Docker pull completed..."
+            sudo docker pull "$ECR_REPOSITORY:$IMAGE_TAG"
+            if [ $? -eq 0 ]; then
+              echo "Docker pull completed successfully."
+            else
+              echo "Failed to pull Docker image."
+              exit 1
+            fi
 
             echo "Running the container..."
             sudo docker run -d \
-              --name container_name \
-              -p 80:8000 "$ECR_REPOSITORY:$TAG"
+              --name myappcontainer \
+              -p 80:8000 "$ECR_REPOSITORY:$IMAGE_TAG"
+            if [ $? -eq 0 ]; then
+              echo "Docker container started successfully."
+            else
+              echo "Failed to start Docker container."
+              exit 1
+            fi
 
             echo "List running Docker containers after deployment..."
             sudo docker ps -a
