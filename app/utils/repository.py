@@ -16,6 +16,10 @@ class AbstractRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    async def find_abs_all(self, **filter_by):
+        raise NotImplementedError
+
+    @abstractmethod
     async def find_one(self, **filter_by):
         raise NotImplementedError
 
@@ -72,6 +76,11 @@ class SQLAlchemyRepository(AbstractRepository):
     async def find_all(self, skip: int, limit: int, **filter_by):
         stmt = select(self.model).filter_by(**filter_by)
         res = await self.session.execute(stmt.offset(skip).limit(limit))
+        return res.scalars().all()
+
+    async def find_abs_all(self, **filter_by):
+        stmt = select(self.model).filter_by(**filter_by)
+        res = await self.session.execute(stmt)
         return res.scalars().all()
 
     async def find_one(self, **filter_by):
