@@ -17,8 +17,8 @@ from app.schemas.quiz import (
 )
 
 router = APIRouter(
-    prefix="/quiz",
-    tags=["Quiz"],
+    prefix="/quizzes",
+    tags=["Quizzes"],
 )
 
 
