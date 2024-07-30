@@ -6,7 +6,7 @@ from app.routers.dependencies import CurrentUserDep, QuizResultServiceDep, UOWDe
 from app.schemas.quiz_result import QuizResultResponse, QuizVoteRequest, UserQuizVote
 
 router = APIRouter(
-    prefix="/quiz_result",
+    prefix="/quiz-result",
     tags=["QuizResult"],
 )
 
@@ -29,7 +29,7 @@ async def quiz_vote(
     )
 
 
-@router.get("/average_score/user/{user_id}", response_model=float)
+@router.get("/users/{user_id}/score", response_model=float)
 async def get_user_average_score(
     user_id: int,
     company_id: int,
@@ -42,7 +42,7 @@ async def get_user_average_score(
     )
 
 
-@router.get("/average_score/company/{company_id}", response_model=float)
+@router.get("/companies/{company_id}/score", response_model=float)
 async def get_company_average_score(
     company_id: int,
     uow: UOWDep,
@@ -54,7 +54,7 @@ async def get_company_average_score(
     )
 
 
-@router.get("/get_vote_redis", status_code=status.HTTP_200_OK)
+@router.get("/vote-redis")
 async def get_vote_redis(
     user_id: int,
     company_id: int,
@@ -69,11 +69,7 @@ async def get_vote_redis(
     )
 
 
-@router.get(
-    "/get_quiz_votes_redis",
-    response_model=List[UserQuizVote],
-    status_code=status.HTTP_200_OK,
-)
+@router.get("/quiz-votes-redis", response_model=List[UserQuizVote])
 async def get_quiz_votes_redis(
     user_id: int,
     company_id: int,
@@ -88,7 +84,7 @@ async def get_quiz_votes_redis(
 
 
 @router.get(
-    "/export_quiz_results/{company_id}/{quiz_id}/csv", status_code=status.HTTP_200_OK
+    "/export-quiz-results/{company_id}/{quiz_id}/csv", status_code=status.HTTP_200_OK
 )
 async def export_quiz_results_to_csv(
     user_id: int,
@@ -109,7 +105,7 @@ async def export_quiz_results_to_csv(
 
 
 @router.get(
-    "/export_quiz_results/{company_id}/{quiz_id}/json",
+    "/export-quiz-results/{company_id}/{quiz_id}/json",
     response_model=List[UserQuizVote],
     status_code=status.HTTP_200_OK,
 )
