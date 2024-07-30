@@ -1,6 +1,6 @@
 from typing import List
 
-from fastapi import APIRouter, status
+from fastapi import APIRouter, Response, status
 
 from app.routers.dependencies import CurrentUserDep, QuizResultServiceDep, UOWDep
 from app.schemas.quiz_result import QuizResultResponse, QuizVoteRequest, UserQuizVote
@@ -81,3 +81,47 @@ async def get_quiz_votes_redis(
     return await quiz_result_service.get_quiz_votes_from_redis(
         uow, current_user.id, user_id, company_id, quiz_id
     )
+
+
+@router.get(
+    "/export-quiz-results/{company_id}/{quiz_id}/csv", status_code=status.HTTP_200_OK
+)
+async def export_quiz_results_to_csv(
+    user_id: int,
+    company_id: int,
+    quiz_id: int,
+    current_user: CurrentUserDep,
+    uow: UOWDep,
+    quiz_result_service: QuizResultServiceDep,
+):
+    csv_data = await quiz_result_service.export_quiz_results_from_redis_to_csv(
+        uow, current_user.id, user_id, company_id, quiz_id
+    )
+    response = Response(content=csv_data, media_type="text/csv")
+    response.headers["Content-Disposition"] = (
+        f"attachment; filename=quiz_results_{company_id}_{quiz_id}.csv"
+    )
+    return response
+
+
+@router.get(
+    "/export-quiz-results/{company_id}/{quiz_id}/json",
+    response_model=List[UserQuizVote],
+    status_code=status.HTTP_200_OK,
+)
+async def export_quiz_results_to_json(
+    user_id: int,
+    company_id: int,
+    quiz_id: int,
+    current_user: CurrentUserDep,
+    uow: UOWDep,
+    quiz_result_service: QuizResultServiceDep,
+):
+    json_data = await quiz_result_service.export_quiz_results_from_redis_to_json(
+        uow, current_user.id, user_id, company_id, quiz_id
+    )
+    response = Response(content=json_data, media_type="application/json")
+    response.headers["Content-Disposition"] = (
+        f"attachment; filename=quiz_results_{company_id}_{quiz_id}.json"
+    )
+    return response
