@@ -49,18 +49,20 @@ jobs:
 
       - name: Deploy to EC2
         env:
+          REGISTRY: ${{ secrets.ECR_REPOSITORY_URI }}
+          IMAGE_TAG: latest
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
-          ECR_REPOSITORY_URI: ${{ secrets.ECR_REPOSITORY_URI }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
         run: |
           ssh -o StrictHostKeyChecking=no -i /tmp/ssh_key ec2-user@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
-            export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-            export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-            export AWS_REGION=${AWS_REGION}
-            docker login -u AWS -p \$(aws ecr get-login-password --region $AWS_REGION) $ECR_REPOSITORY_URI
-            docker pull $ECR_REPOSITORY_URI:latest
-            docker-compose down
-            docker-compose up -d
+            sudo apt update
+            sudo apt install docker.io -y
+            sudo apt install awscli -y
+            sudo $(aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REGISTRY)
+            sudo docker pull $REGISTRY:$IMAGE_TAG
+            sudo docker stop myappcontainer || true
+            sudo docker rm myappcontainer || true
+            sudo docker run -d --name myappcontainer -p 80:8000 $REGISTRY:$IMAGE_TAG
           EOF
         shell: bash
