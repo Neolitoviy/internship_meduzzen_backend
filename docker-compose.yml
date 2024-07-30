@@ -37,5 +37,64 @@ services:
       - db
       - redis
 
+  celery:
+    build:
+      context: .
+    command: celery -A app.celery:celery worker --loglevel=INFO
+    volumes:
+      - .:/app
+    environment:
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD=${POSTGRES_PASS}
+      - POSTGRES_DB
+      - POSTGRES_PORT
+      - POSTGRES_HOST=db
+      - REDIS_HOST=redis
+      - REDIS_PORT
+    depends_on:
+      - db
+      - redis
+
+  celery-beat:
+    build:
+      context: .
+    command: celery -A app.celery:celery beat --loglevel=INFO
+    volumes:
+      - .:/app
+    environment:
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD=${POSTGRES_PASS}
+      - POSTGRES_DB
+      - POSTGRES_PORT
+      - POSTGRES_HOST=db
+      - REDIS_HOST=redis
+      - REDIS_PORT
+    depends_on:
+      - db
+      - redis
+      - celery
+
+  flower:
+    image: mher/flower:latest
+    build:
+      context: .
+    command: celery -A app.celery:celery flower --port=5555
+    volumes:
+      - .:/app
+    ports:
+      - "5555:5555"
+    environment:
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD=${POSTGRES_PASS}
+      - POSTGRES_DB
+      - POSTGRES_PORT
+      - POSTGRES_HOST=db
+      - REDIS_HOST=redis
+      - REDIS_PORT
+    depends_on:
+      - db
+      - redis
+      - celery
+
 volumes:
   postgres_data:
