@@ -64,27 +64,28 @@ jobs:
           script: |
             echo "AWS CLI version: \$(aws --version)"
             echo "Docker version: \$(docker --version)"
-            
+    
             echo "Stop the current running container if exist..."
             docker stop container_name || true
-            
+    
             echo "Remove the previous container..."
             docker rm container_name || true
-            
+    
             echo "AWS credentials set...."
             export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
             export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
             export AWS_REGION=${AWS_REGION}
-            
+    
             echo "Logging in to ECR...."
             aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin ${{ secrets.ECR_REPOSITORY_URI }}
             echo "Logged in successful..."
-            
+    
             echo "Pulling image from ECR..."
             docker pull "${{ secrets.ECR_REPOSITORY_URI }}:${TAG}"
             echo "Docker pull completed..."
-            
+    
             echo "Running the container..."
             docker run -d \
               --name container_name \
-              -p 80:8000 "${{ secrets.ECR_REPOSITORY_URI }}:${TAG}"
+              --env-file  /path/to/dot/env \
+              -p ${{ secrets.EXPOSED_PORT }}:${{ secrets.APPLICATION_PORT }} "${{ secrets.ECR_REPOSITORY_URI }}:${TAG}"
