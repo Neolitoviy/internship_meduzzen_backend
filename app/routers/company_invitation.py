@@ -5,8 +5,8 @@ from app.schemas.company_invitation import CompanyInvitationResponse
 from app.schemas.company_member import CompanyMemberResponse
 
 router = APIRouter(
-    prefix="/invitation",
-    tags=["Invitation"],
+    prefix="/invitations",
+    tags=["Invitations"],
 )
 
 

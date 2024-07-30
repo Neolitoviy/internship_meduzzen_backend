@@ -5,8 +5,8 @@ from app.schemas.company_member import CompanyMemberResponse
 from app.schemas.company_request import CompanyRequestResponse
 
 router = APIRouter(
-    prefix="/request",
-    tags=["Request"],
+    prefix="/requests",
+    tags=["Requests"],
 )
 
 

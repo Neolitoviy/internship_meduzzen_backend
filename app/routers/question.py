@@ -16,8 +16,8 @@ from app.schemas.question import (
 )
 
 router = APIRouter(
-    prefix="/question",
-    tags=["Question"],
+    prefix="/questions",
+    tags=["Questions"],
 )
 
 
@@ -64,7 +64,7 @@ async def delete_question(
 
 
 @router.get(
-    "/question/{question_id}/answers",
+    "/{question_id}/answers",
     response_model=List[AnswerSchemaResponse],
     status_code=status.HTTP_200_OK,
 )
