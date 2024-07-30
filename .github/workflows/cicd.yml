@@ -66,10 +66,10 @@ jobs:
             echo "Docker version: \$(docker --version)"
             
             echo "Stop the current running container if exist..."
-            docker stop myappcontainer || true
+            docker stop container_name || true
             
             echo "Remove the previous container..."
-            docker rm myappcontainer || true
+            docker rm container_name || true
             
             echo "AWS credentials set...."
             export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
@@ -86,5 +86,5 @@ jobs:
             
             echo "Running the container..."
             docker run -d \
-              --name myappcontainer \
+              --name container_name \
               -p 80:8000 "${{ secrets.ECR_REPOSITORY_URI }}:${TAG}"
