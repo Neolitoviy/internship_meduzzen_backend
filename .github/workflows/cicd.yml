@@ -62,9 +62,6 @@ jobs:
             echo "AWS CLI version: $(aws --version)"
             echo "Docker version: $(docker --version)"
             
-            echo "List running Docker containers..."
-            sudo docker ps -a
-
             echo "Stop the current running container if exist..."
             sudo docker stop myappcontainer || true
 
@@ -80,17 +77,17 @@ jobs:
             export AWS_REGION=${AWS_REGION}
 
             echo "Logging in to ECR...."
-            aws ecr get-login-password --region $AWS_REGION | sudo docker login --username AWS --password-stdin $ECR_REPOSITORY
+            sudo aws ecr get-login-password --region $AWS_REGION | sudo docker login --username AWS --password-stdin $ECR_REPOSITORY
             echo "Logged in successful..."
 
             echo "Pulling image from ECR..."
-            sudo docker pull "${ECR_REPOSITORY}:${TAG}"
+            sudo docker pull "$ECR_REPOSITORY:$TAG"
             echo "Docker pull completed..."
 
             echo "Running the container..."
             sudo docker run -d \
               --name myappcontainer \
-              -p 80:8000 "${ECR_REPOSITORY}:${TAG}"
+              -p 80:8000 "$ECR_REPOSITORY:$TAG"
 
             echo "List running Docker containers after deployment..."
             sudo docker ps -a
