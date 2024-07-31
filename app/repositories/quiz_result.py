@@ -20,7 +20,7 @@ class QuizResultRepository(SQLAlchemyRepository):
         stmt = (
             select(QuizResult)
             .filter_by(**filter_by)
-            .order_by(desc(QuizResult.created_at))
+            .order_by(desc(self.model.created_at))
             .limit(1)
         )
         results = await self.session.execute(stmt)
@@ -41,7 +41,7 @@ class QuizResultRepository(SQLAlchemyRepository):
                 func.min(QuizResult.created_at).label("start_date"),
                 func.max(QuizResult.created_at).label("end_date"),
             )
-            .join(CompanyMember, QuizResult.user_id == CompanyMember.user_id)
+            .join(CompanyMember, self.model.user_id == CompanyMember.user_id)
             .where(CompanyMember.company_id == company_id)
             .where(QuizResult.created_at >= start_date)
             .where(QuizResult.created_at <= end_date)
