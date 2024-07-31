@@ -37,11 +37,8 @@ jobs:
             cd internship_meduzzen_backend
             docker-compose down || true
             
-            echo "Pulling Docker image from Docker Hub..."
-            docker pull ${{ secrets.DOCKER_USERNAME }}/webapp:${{ github.sha }}
-            
-            echo "Pulling the latest images..."
-            docker-compose pull
+            echo "Pulling latest code from git repository..."
+            git pull origin be_20_add_aws_structure
 
-            echo "Running Docker Compose with the latest images..."
-            docker-compose up -d
+            echo "Running Docker Compose..."
+            docker-compose up -d --build
