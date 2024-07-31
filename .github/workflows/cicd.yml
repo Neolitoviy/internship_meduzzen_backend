@@ -1,3 +1,10 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - be_20_add_github_actions
+
 jobs:
   build-test-deploy:
     runs-on: ubuntu-latest
