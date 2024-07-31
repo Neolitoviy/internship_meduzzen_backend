@@ -33,4 +33,16 @@ class UserQuizVote(BaseModel):
     question_text: str
     answer_text: str
     is_correct: bool
-    timestamp: Optional[float] = Field(default_factory=lambda: time.time())
+    timestamp: Optional[float] = Field(default_factory=time.time)
+
+    def to_csv_row(self):
+        return [
+            self.user_id,
+            self.company_id,
+            self.quiz_id,
+            self.question_id,
+            self.question_text,
+            self.answer_text,
+            self.is_correct,
+            self.timestamp,
+        ]
