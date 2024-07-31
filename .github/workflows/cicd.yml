@@ -34,7 +34,7 @@ jobs:
               echo "Building and running Docker Compose with the latest images..."
               docker-compose up -d --build
 
-              if docker-compose exec web poetry run pytest then
+              if docker-compose exec web poetry run pytest --maxfail=1 --disable-warnings -q; then
                 echo "Tests passed."
               else
                 echo "Tests failed. Rolling back changes..."
