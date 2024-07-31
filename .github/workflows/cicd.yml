@@ -58,6 +58,9 @@ jobs:
           chmod 600 /tmp/ec2-key.pem
 
           ssh -o StrictHostKeyChecking=no -i /tmp/ec2-key.pem $EC2_USER@$EC2_HOST <<EOF
+              echo "Logging into Amazon ECR..."
+              aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPOSITORY
+          
               echo "Pulling Docker image from ECR..."
               docker pull ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY_URI }}:${{ env.IMAGE_TAG }}
 
