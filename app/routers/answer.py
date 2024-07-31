@@ -8,7 +8,7 @@ from app.schemas.answer import (
 )
 
 router = APIRouter(
-    prefix="/answer",
+    prefix="/answers",
     tags=["Answers"],
 )
 
