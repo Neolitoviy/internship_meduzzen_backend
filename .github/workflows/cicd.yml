@@ -10,39 +10,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v1
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Build and Push Docker image
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/webapp:${{ github.sha }}
-
       - name: Deploy to EC2 instance
         run: |
           echo "${{ secrets.EC2_SSH_KEY }}" > /tmp/ec2-key.pem
           chmod 600 /tmp/ec2-key.pem
 
           ssh -o StrictHostKeyChecking=no -i /tmp/ec2-key.pem ec2-user@${{ secrets.EC2_PUBLIC_IP }} <<EOF
+              cd internship_meduzzen_backend
+          
               echo "Stopping and removing existing containers..."
               docker-compose down || true
           
-              echo "Pulling Docker image from Docker Hub..."
-              docker pull ${{ secrets.DOCKER_USERNAME }}/webapp:${{ github.sha }}
+              echo "Pulling latest code from git repository..."
+              git pull origin be_19_add_aws_structure
 
-              echo "Changing directory to internship_meduzzen_backend..."
-              cd internship_meduzzen_backend
-
-              echo "Pulling the latest images..."
-              docker-compose pull
+              echo "Building Docker images..."
+              docker-compose build
 
               echo "Running Docker Compose with the latest images..."
               docker-compose up -d
