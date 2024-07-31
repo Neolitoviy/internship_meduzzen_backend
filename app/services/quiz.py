@@ -42,7 +42,7 @@ class QuizService:
             )
 
             # Send notifications to company members
-            company_members = await uow.company_members.find_abs_all(
+            company_members = await uow.company_members.find_all(
                 company_id=quiz_data.company_id
             )
             for member in company_members:
