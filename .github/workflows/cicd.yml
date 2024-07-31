@@ -24,9 +24,6 @@ jobs:
               echo "Pulling latest code from git repository..."
               git pull origin be_19_add_aws_structure
 
-              echo "Building Docker images..."
-              docker-compose build
-
-              echo "Running Docker Compose with the latest images..."
-              docker-compose up -d
+              echo "Building and running Docker Compose with the latest images..."
+              docker-compose up -d --build
           EOF
