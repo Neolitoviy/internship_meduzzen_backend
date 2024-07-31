@@ -40,5 +40,8 @@ jobs:
             echo "Pulling Docker image from Docker Hub..."
             docker pull ${{ secrets.DOCKER_USERNAME }}/webapp:${{ github.sha }}
             
-            echo "Running Docker Compose..."
-            docker-compose up -d --build
+            echo "Pulling the latest images..."
+            docker-compose pull
+
+            echo "Running Docker Compose with the latest images..."
+            docker-compose up -d
