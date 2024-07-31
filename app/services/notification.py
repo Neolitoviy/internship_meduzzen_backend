@@ -23,9 +23,8 @@ class NotificationService:
         uow: IUnitOfWork, notification_id: int, user_id: int
     ) -> NotificationResponse:
         async with uow:
-            await uow.notifications.find_one(id=notification_id, user_id=user_id)
             notification_data = {"status": "read"}
             updated_notification = await uow.notifications.edit_one(
-                notification_id, notification_data
+                notification_id, notification_data, user_id=user_id
             )
             return NotificationResponse.model_validate(updated_notification)
