@@ -158,18 +158,7 @@ class QuizResultService:
         )
 
         for vote in quiz_votes:
-            writer.writerow(
-                [
-                    vote.user_id,
-                    vote.company_id,
-                    vote.quiz_id,
-                    vote.question_id,
-                    vote.question_text,
-                    vote.answer_text,
-                    vote.is_correct,
-                    vote.timestamp,
-                ]
-            )
+            writer.writerow(vote.to_csv_row())
 
         return output.getvalue()
 
