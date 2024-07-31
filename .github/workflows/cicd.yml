@@ -38,9 +38,6 @@ jobs:
                 echo "Tests passed."
               else
                 echo "Tests failed. Rolling back changes..."
-                git reset --hard HEAD~1
-                git checkout $BRANCH_NAME
-                git pull origin $BRANCH_NAME
                 exit 1
               fi
           
@@ -52,7 +49,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: setup-and-test
     env:
-      BRANCH_NAME: be_19_add_aws_structure
+      BRANCH_NAME: be_20_add_github_actions
 
     steps:
       - name: Checkout code
