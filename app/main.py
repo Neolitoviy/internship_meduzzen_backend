@@ -1,4 +1,5 @@
 import logging
+from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI
@@ -21,7 +22,18 @@ from app.routers.user import router as users_router
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # startup
+    client = await get_redis_client()
+    await client.ping()
+    yield
+    # shutdown
+    await client.close()
+
+
+app = FastAPI(lifespan=lifespan)
 
 register_exception_handlers(app)
 
@@ -33,19 +45,6 @@ app.add_middleware(
     allow_methods=["*"],  # All
     allow_headers=["*"],  # All
 )
-
-
-@app.on_event("startup")
-async def startup_event():
-    client = await get_redis_client()
-    await client.ping()
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    client = await get_redis_client()
-    await client.close()
-
 
 # Routes
 app.include_router(me_router)
