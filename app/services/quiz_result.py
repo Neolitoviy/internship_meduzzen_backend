@@ -241,7 +241,7 @@ class QuizResultService:
         connection = await get_redis_client()
         answer_key = f"quiz_vote:{vote.user_id}:{vote.company_id}:{vote.quiz_id}:{vote.question_id}"
 
-        await connection.setex(answer_key, 172800, json.dumps(vote.dict()))
+        await connection.setex(answer_key, 172800, json.dumps(vote.model_dump()))
 
     @staticmethod
     async def get_quiz_votes_from_redis(
@@ -317,18 +317,7 @@ class QuizResultService:
         )
 
         for vote in quiz_votes:
-            writer.writerow(
-                [
-                    vote.user_id,
-                    vote.company_id,
-                    vote.quiz_id,
-                    vote.question_id,
-                    vote.question_text,
-                    vote.answer_text,
-                    vote.is_correct,
-                    vote.timestamp,
-                ]
-            )
+            writer.writerow(vote.to_csv_row())
 
         return output.getvalue()
 
@@ -343,4 +332,4 @@ class QuizResultService:
         quiz_votes = await QuizResultService.get_quiz_votes_from_redis(
             uow, current_user_id, user_id, company_id, quiz_id
         )
-        return json.dumps([vote.dict() for vote in quiz_votes])
+        return json.dumps([vote.model_dump() for vote in quiz_votes])
