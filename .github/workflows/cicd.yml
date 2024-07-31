@@ -37,7 +37,7 @@ jobs:
               if docker-compose exec web poetry run pytest --maxfail=1 --disable-warnings -q; then
                 echo "Tests passed."
               else
-                echo "Tests failed. Rolling back changes..."
+                echo "Tests failed."
                 exit 1
               fi
           
