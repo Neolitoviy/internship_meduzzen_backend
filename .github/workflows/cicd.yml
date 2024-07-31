@@ -33,12 +33,12 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            echo "Pulling Docker image from Docker Hub..."
-            docker pull ${{ secrets.DOCKER_USERNAME }}/webapp:${{ github.sha }}
-
             echo "Stopping and removing existing containers..."
             cd internship_meduzzen_backend
             docker-compose down || true
-
+            
+            echo "Pulling Docker image from Docker Hub..."
+            docker pull ${{ secrets.DOCKER_USERNAME }}/webapp:${{ github.sha }}
+            
             echo "Running Docker Compose..."
             docker-compose up -d --build
