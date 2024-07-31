@@ -1,12 +1,23 @@
+import os
+
+import aiofiles
+from fastapi import UploadFile
+
+from app.core.exceptions import BadRequest
+from app.schemas.answer import AnswerSchemaUpdate
 from app.schemas.notification import NotificationCreate
+from app.schemas.question import UpdateQuestionRequest
 from app.schemas.quiz import (
     CreateQuizRequest,
     QuizSchemaResponse,
     QuizzesListResponse,
     UpdateQuizRequest,
 )
+from app.services.answer import AnswerService
 from app.services.company import CompanyService
+from app.services.question import QuestionService
 from app.utils.pagination import paginate
+from app.utils.parse_excel import parse_excel
 from app.utils.unitofwork import IUnitOfWork
 
 
@@ -121,3 +132,93 @@ class QuizService:
                 uow, quiz.company_id, current_user_id, is_admin=True
             )
             await uow.quizzes.delete_one(quiz_id)
+
+    @staticmethod
+    async def import_quizzes(
+        uow: IUnitOfWork, file: UploadFile, current_user_id: int, company_id: int
+    ):
+        os.makedirs("temp", exist_ok=True)
+
+        file_location = f"temp/{file.filename}"
+        async with aiofiles.open(file_location, "wb") as buffer:
+            content = await file.read()
+            await buffer.write(content)
+
+        quizzes_data = parse_excel(file_location)
+        os.remove(file_location)
+
+        created_quizzes = []
+        updated_quizzes = []
+
+        async with uow:
+            await CompanyService.check_company_permission(
+                uow, company_id, current_user_id, is_admin=True
+            )
+
+            for quiz_data in quizzes_data:
+                quiz = await uow.quizzes.find_one_or_none(
+                    title=quiz_data.title, company_id=company_id
+                )
+                if quiz:
+                    updated_quizzes.append(quiz_data.title)
+                    await QuizService.update_existing_quiz(
+                        uow, quiz, quiz_data, current_user_id
+                    )
+                else:
+                    created_quizzes.append(quiz_data.title)
+                    await QuizService.create_quiz(uow, quiz_data, current_user_id)
+
+        return {
+            "status": "Quizzes import completed",
+            "created_quizzes": created_quizzes,
+            "updated_quizzes": updated_quizzes,
+        }
+
+    @staticmethod
+    async def update_existing_quiz(
+        uow: IUnitOfWork, quiz, quiz_data: CreateQuizRequest, current_user_id: int
+    ):
+        update_quiz_data = UpdateQuizRequest(
+            title=quiz_data.title,
+            description=quiz_data.description,
+            frequency_in_days=quiz_data.frequency_in_days,
+        )
+        await QuizService.update_quiz(uow, quiz.id, update_quiz_data, current_user_id)
+
+        for question_data in quiz_data.questions_data:
+            question = await uow.questions.find_one(
+                question_text=question_data.question_text, quiz_id=quiz.id
+            )
+            if not question:
+                await QuestionService.create_question(
+                    uow, quiz.id, question_data, current_user_id
+                )
+            else:
+                update_question_data = UpdateQuestionRequest(
+                    question_text=question_data.question_text,
+                )
+                await QuestionService.update_question(
+                    uow, question.id, update_question_data, current_user_id
+                )
+                for answer_data in question_data.answers:
+                    answer = await uow.answers.find_one(
+                        answer_text=answer_data.answer_text,
+                        question_id=question.id,
+                    )
+                    if not answer:
+                        await AnswerService.create_answer(
+                            uow, question.id, answer_data, current_user_id
+                        )
+                    else:
+                        update_answer_data = AnswerSchemaUpdate(
+                            answer_text=answer_data.answer_text,
+                            is_correct=answer_data.is_correct,
+                        )
+                        await AnswerService.update_answer(
+                            uow, answer.id, update_answer_data, current_user_id
+                        )
+
+    @staticmethod
+    async def validate_file_type(file: UploadFile):
+        if not file.filename.endswith((".xlsx", ".xls")):
+            raise BadRequest("Invalid file type. Please upload an Excel file.")

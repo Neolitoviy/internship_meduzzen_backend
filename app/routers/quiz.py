@@ -1,6 +1,6 @@
 from typing import List
 
-from fastapi import APIRouter, Request, status
+from fastapi import APIRouter, File, Request, UploadFile, status
 
 from app.routers.dependencies import (
     CurrentUserDep,
@@ -85,3 +85,15 @@ async def get_questions_by_quiz_id(
     return await service.get_questions_by_quiz_id(
         uow, quiz_id, current_user.id, skip, limit
     )
+
+
+@router.post("/import")
+async def import_quizzes(
+    company_id: int,
+    current_user: CurrentUserDep,
+    uow: UOWDep,
+    service: QuizServiceDep,
+    file: UploadFile = File(...),
+):
+    await service.validate_file_type(file)
+    return await service.import_quizzes(uow, file, current_user.id, company_id)
