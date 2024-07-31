@@ -3,7 +3,7 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - be_20_add_github_actions
+      - be_19_add_aws_structure
 
 jobs:
   build-test-deploy:
