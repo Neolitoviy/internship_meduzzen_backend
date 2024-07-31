@@ -33,14 +33,7 @@ jobs:
               docker-compose up -d --build
 
               echo "Running tests..."
-              docker-compose exec web poetry run pytest
-
-              if [ $? -eq 0 ]; then
-                  echo "Tests passed."
-              else
-                  echo "Tests failed."
-                  exit 1
-              fi
+              docker-compose exec web poetry run pytest --maxfail=1 --disable-warnings -q || exit 1
 
               echo "Stopping test environment..."
               docker-compose down || true
