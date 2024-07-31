@@ -82,7 +82,7 @@ class QuizResultService:
         connection = await get_redis_client()
         answer_key = f"quiz_vote:{vote.user_id}:{vote.company_id}:{vote.quiz_id}:{vote.question_id}"
 
-        await connection.setex(answer_key, 172800, json.dumps(vote.dict()))
+        await connection.setex(answer_key, 172800, json.dumps(vote.model_dump()))
 
     @staticmethod
     async def get_quiz_votes_from_redis(
