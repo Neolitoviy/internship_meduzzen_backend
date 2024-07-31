@@ -21,7 +21,9 @@ jobs:
               echo "Stopping and removing existing containers..."
               docker-compose down || true
           
-              echo "Pulling latest code from git repository..."
+              echo "Switching to the correct branch..."
+              git fetch origin
+              git checkout be_19_add_aws_structure
               git pull origin be_19_add_aws_structure
 
               echo "Building and running Docker Compose with the latest images..."
