@@ -25,9 +25,6 @@ jobs:
               git fetch origin
               git checkout be_19_add_aws_structure
               git pull origin be_19_add_aws_structure
-          
-              echo "Installing dependencies..."
-              poetry install
 
               echo "Running tests..."
               poetry run pytest
