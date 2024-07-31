@@ -6,10 +6,45 @@ on:
       - be_19_add_aws_structure
 
 jobs:
-  build-test-deploy:
+  test:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Run tests on EC2 instance
+        run: |
+          echo "${{ secrets.EC2_SSH_KEY }}" > /tmp/ec2-key.pem
+          chmod 600 /tmp/ec2-key.pem
+
+          ssh -o StrictHostKeyChecking=no -i /tmp/ec2-key.pem ec2-user@${{ secrets.EC2_PUBLIC_IP }} <<EOF
+              cd internship_meduzzen_backend
+          
+              echo "Switching to the correct branch..."
+              git fetch origin
+              git checkout be_19_add_aws_structure
+              git pull origin be_19_add_aws_structure
+          
+              echo "Running tests..."
+              poetry run pytest
+          
+              if [ $? -eq 0 ]; then
+                  echo "Tests passed."
+              else
+                  echo "Tests failed."
+                  exit 1
+              fi
+          EOF
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
       - name: Deploy to EC2 instance
         run: |
           echo "${{ secrets.EC2_SSH_KEY }}" > /tmp/ec2-key.pem
@@ -21,11 +56,6 @@ jobs:
               echo "Stopping and removing existing containers..."
               docker-compose down || true
           
-              echo "Switching to the correct branch..."
-              git fetch origin
-              git checkout be_19_add_aws_structure
-              git pull origin be_19_add_aws_structure
-
               echo "Building and running Docker Compose with the latest images..."
               docker-compose up -d --build
           EOF
