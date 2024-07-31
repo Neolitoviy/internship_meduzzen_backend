@@ -33,4 +33,4 @@ class UserQuizVote(BaseModel):
     question_text: str
     answer_text: str
     is_correct: bool
-    timestamp: Optional[float] = Field(default_factory=lambda: time.time())
+    timestamp: Optional[float] = Field(default_factory=time.time)
