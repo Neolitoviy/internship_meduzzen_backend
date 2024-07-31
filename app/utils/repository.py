@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Optional
 
 from sqlalchemy import RowMapping, delete, func, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -73,13 +74,12 @@ class SQLAlchemyRepository(AbstractRepository):
             raise RecordNotFound("Record not updated")
         return result._mapping
 
-    async def find_all(self, skip: int, limit: int, **filter_by):
+    async def find_all(self, skip: Optional[int] = None, limit: Optional[int] = None, **filter_by):
         stmt = select(self.model).filter_by(**filter_by)
-        res = await self.session.execute(stmt.offset(skip).limit(limit))
-        return res.scalars().all()
-
-    async def find_abs_all(self, **filter_by):
-        stmt = select(self.model).filter_by(**filter_by)
+        if skip is not None:
+            stmt = stmt.offset(skip)
+        if limit is not None:
+            stmt = stmt.limit(limit)
         res = await self.session.execute(stmt)
         return res.scalars().all()
 
