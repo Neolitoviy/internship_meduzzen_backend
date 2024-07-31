@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Run tests on EC2 instance
         run: |
@@ -26,8 +26,11 @@ jobs:
               git checkout be_19_add_aws_structure
               git pull origin be_19_add_aws_structure
           
+              echo "Installing dependencies..."
+              poetry install
+
               echo "Running tests..."
-              pytest
+              poetry run pytest
           
               if [ $? -eq 0 ]; then
                   echo "Tests passed."
@@ -43,7 +46,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Deploy to EC2 instance
         run: |
