@@ -184,4 +184,4 @@ class QuizResultService:
         quiz_votes = await QuizResultService.get_quiz_votes_from_redis(
             uow, current_user_id, user_id, company_id, quiz_id
         )
-        return json.dumps([vote.dict() for vote in quiz_votes])
+        return json.dumps([vote.model_dump() for vote in quiz_votes])
