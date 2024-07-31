@@ -37,6 +37,7 @@ jobs:
             docker pull ${{ secrets.DOCKER_USERNAME }}/webapp:${{ github.sha }}
 
             echo "Stopping and removing existing containers..."
+            cd internship_meduzzen_backend
             docker-compose down || true
 
             echo "Running Docker Compose..."
