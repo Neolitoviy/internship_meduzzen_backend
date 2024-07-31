@@ -34,8 +34,15 @@ jobs:
               echo "Building and running Docker Compose with the latest images..."
               docker-compose up -d --build
 
-              echo "Running tests..."
-              docker-compose exec web poetry run pytest --maxfail=1 --disable-warnings -q || exit 1
+              if docker-compose exec web poetry run pytest then
+                echo "Tests passed."
+              else
+                echo "Tests failed. Rolling back changes..."
+                git reset --hard HEAD~1
+                git checkout $BRANCH_NAME
+                git pull origin $BRANCH_NAME
+                exit 1
+              fi
           
               echo "Stopping test environment..."
               docker-compose down || true
