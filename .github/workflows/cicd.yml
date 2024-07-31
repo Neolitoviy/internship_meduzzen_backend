@@ -3,28 +3,53 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - be_19_add_aws_structure
+      - be_20_add_github_actions
 
 jobs:
-  build-test-deploy:
+  setup-and-test:
     runs-on: ubuntu-latest
+    env:
+      BRANCH_NAME: be_20_add_github_actions
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
-      - name: Login to Docker Hub
-        uses: docker/login-action@v1
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Run setup and tests on EC2 instance
+        run: |
+          echo "${{ secrets.EC2_SSH_KEY }}" > /tmp/ec2-key.pem
+          chmod 600 /tmp/ec2-key.pem
 
-      - name: Build and Push Docker image
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/webapp:${{ github.sha }}
+          ssh -o StrictHostKeyChecking=no -i /tmp/ec2-key.pem ec2-user@${{ secrets.EC2_PUBLIC_IP }} <<EOF
+              cd internship_meduzzen_backend
+
+              echo "Switching to the correct branch..."
+              git fetch origin
+              git checkout $BRANCH_NAME
+              git pull origin $BRANCH_NAME
+
+              echo "Stopping and removing existing containers..."
+              docker-compose down || true
+
+              echo "Building and running Docker Compose with the latest images..."
+              docker-compose up -d --build
+
+              echo "Running tests..."
+              docker-compose exec web poetry run pytest --maxfail=1 --disable-warnings -q || exit 1
+          
+              echo "Stopping test environment..."
+              docker-compose down || true
+          EOF
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: setup-and-test
+    env:
+      BRANCH_NAME: be_19_add_aws_structure
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Deploy to EC2 instance
         run: |
@@ -33,16 +58,15 @@ jobs:
 
           ssh -o StrictHostKeyChecking=no -i /tmp/ec2-key.pem ec2-user@${{ secrets.EC2_PUBLIC_IP }} <<EOF
               cd internship_meduzzen_backend
-              
-              echo "Pulling latest code from git repository..."
-              git pull origin be_20_add_aws_structure
 
-              echo "Building Docker images..."
-              docker-compose build
+              echo "Pulling latest code from git repository..."
+              git fetch origin
+              git checkout $BRANCH_NAME
+              git pull origin $BRANCH_NAME
 
               echo "Stopping and removing existing containers..."
               docker-compose down || true
 
-              echo "Running Docker Compose with the latest images..."
-              docker-compose up -d
+              echo "Building and running Docker Compose with the latest images..."
+              docker-compose up -d --build
           EOF
