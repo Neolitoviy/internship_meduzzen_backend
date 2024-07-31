@@ -35,9 +35,6 @@ jobs:
               echo "Running tests..."
               docker-compose exec web poetry run pytest --maxfail=1 --disable-warnings -q || exit 1
           
-              echo "Fetching logs after tests..."
-              docker-compose logs web
-
               echo "Stopping test environment..."
               docker-compose down || true
           EOF
