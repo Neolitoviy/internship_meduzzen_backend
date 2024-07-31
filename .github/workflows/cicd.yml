@@ -38,7 +38,7 @@ jobs:
               docker-compose down || true
           
               echo "Pulling latest code from git repository..."
-              git pull origin be_20_add_aws_structure
+              git pull origin be_19_add_aws_structure
 
               echo "Building Docker images..."
               docker-compose build
