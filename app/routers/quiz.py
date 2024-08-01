@@ -153,7 +153,7 @@ async def get_questions_by_quiz_id(
     )
 
 
-@router.post("/import")
+@router.post("/import", status_code=status.HTTP_201_CREATED)
 async def import_quizzes(
     company_id: int,
     current_user: CurrentUserDep,
@@ -161,5 +161,21 @@ async def import_quizzes(
     service: QuizServiceDep,
     file: UploadFile = File(...),
 ):
+    """
+    Imports quizzes from an uploaded Excel file.
+
+    Args:
+        company_id (int): The ID of the company to import quizzes for.
+        current_user (CurrentUserDep): The current authenticated user.
+        uow (UOWDep): The unit of work dependency.
+        service (QuizServiceDep): The quiz service dependency.
+        file (UploadFile): The uploaded Excel file containing quizzes.
+
+    Returns:
+        dict: A dictionary with the status of the import, created quizzes, and updated quizzes.
+
+    Raises:
+        HTTPException: If the file type is invalid or any other error occurs during the import process.
+    """
     await service.validate_file_type(file)
     return await service.import_quizzes(uow, file, current_user.id, company_id)

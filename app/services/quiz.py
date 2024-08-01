@@ -205,6 +205,22 @@ class QuizService:
     async def import_quizzes(
         uow: IUnitOfWork, file: UploadFile, current_user_id: int, company_id: int
     ):
+        """
+        Imports quizzes from an uploaded Excel file, creating or updating quizzes as needed.
+
+        Args:
+            uow (IUnitOfWork): The unit of work instance for database operations.
+            file (UploadFile): The uploaded Excel file containing quiz data.
+            current_user_id (int): The ID of the currently authenticated user.
+            company_id (int): The ID of the company to which the quizzes belong.
+
+        Returns:
+            dict: A dictionary containing the status of the import operation,
+            a list of created quizzes, and a list of updated quizzes.
+
+        Raises:
+            BadRequest: If the user does not have permission to import quizzes or if the file type is invalid.
+        """
         os.makedirs("temp", exist_ok=True)
 
         file_location = f"temp/{file.filename}"
@@ -246,6 +262,15 @@ class QuizService:
     async def update_existing_quiz(
         uow: IUnitOfWork, quiz, quiz_data: CreateQuizRequest, current_user_id: int
     ):
+        """
+        Updates an existing quiz with new data, including questions and answers.
+
+        Args:
+            uow (IUnitOfWork): The unit of work instance for database operations.
+            quiz (Quiz): The existing quiz instance to be updated.
+            quiz_data (CreateQuizRequest): The new data for the quiz.
+            current_user_id (int): The ID of the currently authenticated user.
+        """
         update_quiz_data = UpdateQuizRequest(
             title=quiz_data.title,
             description=quiz_data.description,
@@ -288,5 +313,14 @@ class QuizService:
 
     @staticmethod
     async def validate_file_type(file: UploadFile):
+        """
+        Validates the type of the uploaded file to ensure it is an Excel file.
+
+        Args:
+            file (UploadFile): The uploaded file to be validated.
+
+        Raises:
+            BadRequest: If the file is not an Excel file.
+        """
         if not file.filename.endswith((".xlsx", ".xls")):
             raise BadRequest("Invalid file type. Please upload an Excel file.")

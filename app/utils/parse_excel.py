@@ -6,7 +6,19 @@ from app.schemas.question import QuestionSchemaCreate
 from app.schemas.quiz import CreateQuizRequest
 
 
-def parse_excel(file_path: str):
+def parse_excel(file_path: str) -> list[CreateQuizRequest]:
+    """
+    Parses an Excel file to extract quiz data and convert it into a list of CreateQuizRequest objects.
+
+    Args:
+        file_path (str): The path to the Excel file containing quiz data.
+
+    Returns:
+        list[CreateQuizRequest]: A list of CreateQuizRequest objects created from the Excel file data.
+
+    Raises:
+        BadRequest: If the Excel file is missing required columns.
+    """
     required_columns = [
         "Quiz Title",
         "Description",
@@ -18,11 +30,14 @@ def parse_excel(file_path: str):
     ]
     df = pd.read_excel(file_path)
 
+    # Check if all required columns are present
     for column in required_columns:
         if column not in df.columns:
             raise BadRequest(f"Missing required column: {column}")
+
     quizzes = {}
 
+    # Iterate through each row in the DataFrame
     for _, row in df.iterrows():
         quiz_title = row["Quiz Title"]
         description = row["Description"]
@@ -32,6 +47,7 @@ def parse_excel(file_path: str):
         answer_text = row["Answer Text"]
         is_correct = row["Is Correct"]
 
+        # If quiz title is not in the dictionary, add it
         if quiz_title not in quizzes:
             quizzes[quiz_title] = {
                 "title": quiz_title,
@@ -46,14 +62,17 @@ def parse_excel(file_path: str):
             (q for q in questions if q["question_text"] == question_text), None
         )
 
+        # If question text is not in the list of questions, add it
         if question is None:
             question = {"question_text": question_text, "answers": []}
             questions.append(question)
 
+        # Add answer to the question
         question["answers"].append(
             {"answer_text": answer_text, "is_correct": bool(is_correct)}
         )
 
+    # Convert the dictionary of quizzes to a list of CreateQuizRequest objects
     quizzes_list = [
         CreateQuizRequest(
             title=quiz["title"],
