@@ -8,24 +8,37 @@ on:
 jobs:
   setup-and-test:
     runs-on: ubuntu-latest
+    env:
+      BRANCH_NAME: be_19_add_aws_structure
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Create .env file
+      - name: Run setup and tests on EC2 instance
         run: |
-          echo "${{ secrets.ENV_VARS }}" > .env
+          echo "${{ secrets.EC2_SSH_KEY }}" > /tmp/ec2-key.pem
+          chmod 600 /tmp/ec2-key.pem
 
-      - name: Build and Run Docker Compose
-        run: |
-          docker-compose up -d --build
+          ssh -o StrictHostKeyChecking=no -i /tmp/ec2-key.pem ec2-user@${{ secrets.EC2_PUBLIC_IP }} <<EOF
+              cd internship_meduzzen_backend
 
-      - name: Run tests inside Docker container
-        run: docker-compose exec -T web poetry run pytest --maxfail=1 --disable-warnings -q -v
+              echo "Switching to the correct branch..."
+              git fetch origin
+              git checkout $BRANCH_NAME
+              git pull origin $BRANCH_NAME
+
+              echo "Stopping and removing existing containers..."
+              docker-compose down || true
+
+              echo "Building and running Docker Compose with the latest images..."
+              docker-compose up -d --build
+
+              docker-compose exec -T web poetry run pytest --maxfail=1 --disable-warnings -q -v
+          
+              echo "Stopping test environment..."
+              docker-compose down || true
+          EOF
 
   deploy:
     runs-on: ubuntu-latest
