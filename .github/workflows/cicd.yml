@@ -20,7 +20,7 @@ jobs:
           echo "${{ secrets.EC2_SSH_KEY }}" > /tmp/ec2-key.pem
           chmod 600 /tmp/ec2-key.pem
 
-          ssh -o StrictHostKeyChecking=no -i /tmp/ec2-key.pem ec2-user@${{ secrets.EC2_PUBLIC_IP }} <<EOF
+          ssh -o StrictHostKeyChecking=no -i /tmp/ec2-key.pem ec2-user@${{ secrets.EC2_TEST_PUBLIC_IP }} <<EOF
               cd internship_meduzzen_backend
 
               echo "Switching to the correct branch..."
@@ -35,9 +35,6 @@ jobs:
               docker-compose up -d --build
 
               docker-compose exec -T web poetry run pytest --maxfail=1 --disable-warnings -q -v
-          
-              echo "Stopping test environment..."
-              docker-compose down || true
           EOF
 
   deploy:
