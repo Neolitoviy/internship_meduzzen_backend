@@ -8,11 +8,30 @@ from app.utils.repository import SQLAlchemyRepository
 
 
 class CompanyRequestRepository(SQLAlchemyRepository):
+    """
+    Repository class for CompanyRequest model.
+
+    Inherits from:
+        SQLAlchemyRepository: Base class for SQLAlchemy operations.
+
+    Attributes:
+        model: The SQLAlchemy model class associated with this repository.
+    """
     model = CompanyRequest
 
     async def count_all(
         self, user_id: Optional[int] = None, company_id: Optional[int] = None
     ) -> int:
+        """
+        Count all company requests for request user or company owner.
+
+        Args:
+            user_id (Optional[int]): ID of the user.
+            company_id (Optional[int]): ID of the company.
+
+        Returns:
+            int: The count of matching company requests.
+        """
         stmt = select(func.count()).select_from(self.model)
         if user_id:
             stmt = stmt.where(
@@ -33,6 +52,18 @@ class CompanyRequestRepository(SQLAlchemyRepository):
         skip: int = 0,
         limit: int = 10,
     ) -> Sequence[Row[Any] | RowMapping | Any]:
+        """
+        Find all company requests for request user or company owner.
+
+        Args:
+            user_id (Optional[int]): ID of the user.
+            company_id (Optional[int]): ID of the company.
+            skip (int): Number of records to skip.
+            limit (int): Maximum number of records to return.
+
+        Returns:
+            Sequence[Row[Any] | RowMapping | Any]: The list of matching company requests.
+        """
         stmt = select(self.model)
         if user_id:
             stmt = stmt.where(

@@ -1,14 +1,23 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 
 class UserAuthBase(BaseModel):
-    email: EmailStr
+    """
+    Base model for user authentication information.
+    """
+    email: EmailStr = Field(..., description="The email address of the user.")
 
 
 class UserAuthCreate(UserAuthBase):
-    password: str
+    """
+    Model for creating a new user with authentication information.
+    """
+    password: str = Field(..., description="The password for the user.")
 
 
 class SignInRequest(BaseModel):
-    email: EmailStr
-    password: str
+    """
+    Model for user sign-in request.
+    """
+    email: EmailStr = Field(..., description="The email address of the user.")
+    password: str = Field(..., description="The password for the user.")

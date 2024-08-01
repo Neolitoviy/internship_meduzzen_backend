@@ -32,6 +32,20 @@ async def quiz_vote(
     current_user: CurrentUserDep,
     quiz_result_service: QuizResultServiceDep,
 ):
+    """
+    Submit a vote for a quiz.
+
+    Args:
+        company_id (int): The ID of the company.
+        quiz_id (int): The ID of the quiz.
+        vote_data (QuizVoteRequest): The data for the quiz vote.
+        uow (UOWDep): The unit of work dependency.
+        current_user (CurrentUserDep): The current authenticated user.
+        quiz_result_service (QuizResultServiceDep): The quiz result service dependency.
+
+    Returns:
+        QuizResultResponse: The result of the quiz vote.
+    """
     return await quiz_result_service.quiz_vote(
         uow, company_id, quiz_id, vote_data, current_user.id
     )
@@ -45,6 +59,19 @@ async def get_user_average_score(
     uow: UOWDep,
     quiz_result_service: QuizResultServiceDep,
 ):
+    """
+    Get the average score of a user across all quizzes in a company.
+
+    Args:
+        user_id (int): The ID of the user.
+        company_id (int): The ID of the company.
+        current_user (CurrentUserDep): The current authenticated user.
+        uow (UOWDep): The unit of work dependency.
+        quiz_result_service (QuizResultServiceDep): The quiz result service dependency.
+
+    Returns:
+        float: The average score of the user.
+    """
     return await quiz_result_service.get_user_average_score(
         uow, user_id, company_id, current_user.id
     )
@@ -61,6 +88,19 @@ async def get_user_company_average_score(
     quiz_result_service: QuizResultServiceDep,
     current_user: CurrentUserDep,
 ):
+    """
+    Get the average score of a user in a specific company.
+
+    Args:
+        user_id (int): The ID of the user.
+        company_id (int): The ID of the company.
+        uow (UOWDep): The unit of work dependency.
+        quiz_result_service (QuizResultServiceDep): The quiz result service dependency.
+        current_user (CurrentUserDep): The current authenticated user.
+
+    Returns:
+        float: The average score of the user in the company.
+    """
     return await quiz_result_service.get_company_average_score(
         uow, user_id, company_id, current_user.id
     )
@@ -74,6 +114,19 @@ async def get_user_quiz_scores(
     skip: int = 0,
     limit: int = 10,
 ):
+    """
+    Get the quiz scores of the current user.
+
+    Args:
+        current_user (CurrentUserDep): The current authenticated user.
+        uow (UOWDep): The unit of work dependency.
+        service (QuizResultServiceDep): The quiz result service dependency.
+        skip (int): Number of records to skip.
+        limit (int): Maximum number of records to return.
+
+    Returns:
+        List[QuizScore]: A list of quiz scores.
+    """
     return await service.get_user_quiz_scores(uow, current_user.id, skip, limit)
 
 
@@ -85,6 +138,19 @@ async def get_user_last_quiz_attempts(
     skip: int = 0,
     limit: int = 10,
 ):
+    """
+    Get the last quiz attempts of the current user.
+
+    Args:
+        current_user (CurrentUserDep): The current authenticated user.
+        uow (UOWDep): The unit of work dependency.
+        service (QuizResultServiceDep): The quiz result service dependency.
+        skip (int): Number of records to skip.
+        limit (int): Maximum number of records to return.
+
+    Returns:
+        List[LastQuizAttempt]: A list of last quiz attempts.
+    """
     return await service.get_user_last_quiz_attempts(uow, current_user.id, skip, limit)
 
 
@@ -102,6 +168,22 @@ async def get_company_members_average_scores(
     skip: int = 0,
     limit: int = 10,
 ):
+    """
+    Get the average scores of company members over time.
+
+    Args:
+        company_id (int): The ID of the company.
+        start_date (datetime): The start date for the score calculation period.
+        end_date (datetime): The end date for the score calculation period.
+        current_user (CurrentUserDep): The current authenticated user.
+        uow (UOWDep): The unit of work dependency.
+        service (QuizResultServiceDep): The quiz result service dependency.
+        skip (int): Number of records to skip.
+        limit (int): Maximum number of records to return.
+
+    Returns:
+        List[CompanyMemberAverageScore]: A list of average scores of company members.
+    """
     return await service.get_company_members_average_scores_over_time(
         uow, company_id, start_date, end_date, current_user.id, skip, limit
     )
@@ -122,6 +204,23 @@ async def get_user_quiz_trends(
     skip: int = 0,
     limit: int = 10,
 ):
+    """
+    Get the quiz trends of a user over a period of time.
+
+    Args:
+        company_id (int): The ID of the company.
+        user_id (int): The ID of the user.
+        start_date (datetime): The start date for the trend calculation period.
+        end_date (datetime): The end date for the trend calculation period.
+        current_user (CurrentUserDep): The current authenticated user.
+        uow (UOWDep): The unit of work dependency.
+        service (QuizResultServiceDep): The quiz result service dependency.
+        skip (int): Number of records to skip.
+        limit (int): Maximum number of records to return.
+
+    Returns:
+        List[QuizTrend]: A list of quiz trends.
+    """
     return await service.get_user_quiz_trends(
         uow, company_id, user_id, start_date, end_date, current_user.id, skip, limit
     )
@@ -139,6 +238,20 @@ async def get_company_user_last_attempts(
     skip: int = 0,
     limit: int = 10,
 ):
+    """
+    Get the last quiz attempts of users in a company.
+
+    Args:
+        company_id (int): The ID of the company.
+        current_user (CurrentUserDep): The current authenticated user.
+        uow (UOWDep): The unit of work dependency.
+        service (QuizResultServiceDep): The quiz result service dependency.
+        skip (int): Number of records to skip.
+        limit (int): Maximum number of records to return.
+
+    Returns:
+        List[CompanyUserLastAttempt]: A list of last quiz attempts of users in the company.
+    """
     return await service.get_company_user_last_attempts(
         uow, company_id, current_user.id, skip, limit
     )
@@ -154,6 +267,21 @@ async def get_vote_redis(
     uow: UOWDep,
     quiz_result_service: QuizResultServiceDep,
 ):
+    """
+    Get a specific quiz vote from Redis.
+
+    Args:
+        user_id (int): The ID of the user who voted.
+        company_id (int): The ID of the company.
+        quiz_id (int): The ID of the quiz.
+        question_id (int): The ID of the question.
+        current_user (CurrentUserDep): The current authenticated user.
+        uow (UOWDep): The unit of work dependency.
+        quiz_result_service (QuizResultServiceDep): The quiz result service dependency.
+
+    Returns:
+        dict: The quiz vote data.
+    """
     return await quiz_result_service.get_vote_redis(
         uow, current_user.id, user_id, company_id, quiz_id, question_id
     )
@@ -168,6 +296,20 @@ async def get_quiz_votes_redis(
     uow: UOWDep,
     quiz_result_service: QuizResultServiceDep,
 ):
+    """
+    Get all quiz votes for a user from Redis.
+
+    Args:
+        user_id (int): The ID of the user who voted.
+        company_id (int): The ID of the company.
+        quiz_id (int): The ID of the quiz.
+        current_user (CurrentUserDep): The current authenticated user.
+        uow (UOWDep): The unit of work dependency.
+        quiz_result_service (QuizResultServiceDep): The quiz result service dependency.
+
+    Returns:
+        List[UserQuizVote]: A list of quiz votes.
+    """
     return await quiz_result_service.get_quiz_votes_from_redis(
         uow, current_user.id, user_id, company_id, quiz_id
     )
@@ -184,6 +326,20 @@ async def export_quiz_results_to_csv(
     uow: UOWDep,
     quiz_result_service: QuizResultServiceDep,
 ):
+    """
+    Export quiz results to CSV format.
+
+    Args:
+        user_id (int): The ID of the user.
+        company_id (int): The ID of the company.
+        quiz_id (int): The ID of the quiz.
+        current_user (CurrentUserDep): The current authenticated user.
+        uow (UOWDep): The unit of work dependency.
+        quiz_result_service (QuizResultServiceDep): The quiz result service dependency.
+
+    Returns:
+        Response: The CSV file response.
+    """
     csv_data = await quiz_result_service.export_quiz_results_from_redis_to_csv(
         uow, current_user.id, user_id, company_id, quiz_id
     )
@@ -207,6 +363,20 @@ async def export_quiz_results_to_json(
     uow: UOWDep,
     quiz_result_service: QuizResultServiceDep,
 ):
+    """
+    Export quiz results to JSON format.
+
+    Args:
+        user_id (int): The ID of the user.
+        company_id (int): The ID of the company.
+        quiz_id (int): The ID of the quiz.
+        current_user (CurrentUserDep): The current authenticated user.
+        uow (UOWDep): The unit of work dependency.
+        quiz_result_service (QuizResultServiceDep): The quiz result service dependency.
+
+    Returns:
+        Response: The JSON file response.
+    """
     json_data = await quiz_result_service.export_quiz_results_from_redis_to_json(
         uow, current_user.id, user_id, company_id, quiz_id
     )
