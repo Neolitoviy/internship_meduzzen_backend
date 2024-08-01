@@ -22,7 +22,7 @@ async def check_quiz_completion():
         HTTPException: If any errors occur during the process.
     """
     async with UnitOfWork() as uow:
-        company_members = await uow.company_members.find_abs_all()
+        company_members = await uow.company_members.find_all()
         for member in company_members:
             last_attempt = await uow.quiz_results.find_last_attempt_with_filter(
                 user_id=member.user_id

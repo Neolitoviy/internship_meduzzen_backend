@@ -47,7 +47,7 @@ async def test_create_quiz(uow, mock_quiz):
     current_user_id = 1
 
     uow.quizzes.add_one.return_value = mock_quiz
-    uow.company_members.find_abs_all.return_value = [
+    uow.company_members.find_all.return_value = [
         CompanyMemberResponse(
             id=1,
             user_id=current_user_id,
