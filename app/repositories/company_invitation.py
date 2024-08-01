@@ -8,9 +8,27 @@ from app.utils.repository import SQLAlchemyRepository
 
 
 class CompanyInvitationRepository(SQLAlchemyRepository):
+    """
+    Repository class for CompanyInvitation model.
+
+    Inherits from:
+        SQLAlchemyRepository: Base class for SQLAlchemy operations.
+
+    Attributes:
+        model: The SQLAlchemy model class associated with this repository.
+    """
     model = CompanyInvitation
 
     async def count_all(self, user_id: Optional[int] = None) -> int:
+        """
+        Count the total number of company invitations for invited user or company owner.
+
+        Args:
+            user_id (Optional[int]): ID of the user to filter invitations by user ID or by the companies owned by the user.
+
+        Returns:
+            int: The total number of company invitations.
+        """
         stmt = select(func.count()).select_from(self.model)
         if user_id:
             stmt = stmt.where(
@@ -27,6 +45,17 @@ class CompanyInvitationRepository(SQLAlchemyRepository):
     async def find_all(
         self, user_id: Optional[int] = None, skip: int = 0, limit: int = 10
     ) -> List[CompanyInvitation]:
+        """
+        Find all company invitations for invited user or company owner.
+
+        Args:
+            user_id (Optional[int]): ID of the user to filter invitations by user ID or by the companies owned by the user.
+            skip (int): Number of records to skip for pagination.
+            limit (int): Maximum number of records to return.
+
+        Returns:
+            List[CompanyInvitation]: A list of company invitations.
+        """
         stmt = select(self.model)
         if user_id:
             stmt = stmt.where(

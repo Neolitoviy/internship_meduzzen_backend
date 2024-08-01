@@ -25,6 +25,11 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """
+    Context manager for application lifespan events.
+
+    Handles setup and teardown tasks such as establishing and closing Redis connections.
+    """
     # startup
     client = await get_redis_client()
     await client.ping()
@@ -35,18 +40,19 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+# Register global exception handlers
 register_exception_handlers(app)
 
 # CORS Middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # All
+    allow_origins=["*"],  # Allow all origins
     allow_credentials=True,
-    allow_methods=["*"],  # All
-    allow_headers=["*"],  # All
+    allow_methods=["*"],  # Allow all methods
+    allow_headers=["*"],  # Allow all headers
 )
 
-# Routes
+# Include routers
 app.include_router(me_router)
 app.include_router(users_router)
 app.include_router(company_router)

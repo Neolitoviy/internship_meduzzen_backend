@@ -1,24 +1,33 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class AnswerSchemaCreate(BaseModel):
-    answer_text: str
-    is_correct: bool
+    """
+    Schema for creating a new answer.
+    """
+    answer_text: str = Field(..., description="The text of the answer.")
+    is_correct: bool = Field(..., description="Indicates whether the answer is correct.")
 
     model_config = {"from_attributes": True}
 
 
 class AnswerSchemaResponse(BaseModel):
-    id: int
-    answer_text: str
-    is_correct: bool
-    question_id: int
+    """
+    Schema for the response when retrieving an answer.
+    """
+    id: int = Field(..., description="The unique identifier of the answer.")
+    answer_text: str = Field(..., description="The text of the answer.")
+    is_correct: bool = Field(..., description="Indicates whether the answer is correct.")
+    question_id: int = Field(..., description="The unique identifier of the associated question.")
 
     model_config = {"from_attributes": True}
 
 
 class AnswerSchemaUpdate(BaseModel):
-    answer_text: str
-    is_correct: bool
+    """
+    Schema for updating an existing answer.
+    """
+    answer_text: str = Field(..., description="The text of the answer.")
+    is_correct: bool = Field(..., description="Indicates whether the answer is correct.")
 
     model_config = {"from_attributes": True}

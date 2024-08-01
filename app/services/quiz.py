@@ -11,10 +11,30 @@ from app.utils.unitofwork import IUnitOfWork
 
 
 class QuizService:
+    """
+    Service class for managing quizzes.
+
+    Provides methods to create, retrieve, update, and delete quizzes, as well as send notifications to company members.
+    """
+
     @staticmethod
     async def create_quiz(
         uow: IUnitOfWork, quiz_data: CreateQuizRequest, current_user_id: int
     ) -> QuizSchemaResponse:
+        """
+        Create a new quiz and send notifications to company members.
+
+        Args:
+            uow (IUnitOfWork): Unit of work for database operations.
+            quiz_data (CreateQuizRequest): Data for creating the quiz.
+            current_user_id (int): ID of the user creating the quiz.
+
+        Returns:
+            QuizSchemaResponse: The created quiz.
+
+        Raises:
+            CompanyPermissionError: If the user does not have permission to create a quiz for the company.
+        """
         async with uow:
             await CompanyService.check_company_permission(
                 uow, quiz_data.company_id, current_user_id, is_admin=True
@@ -70,6 +90,23 @@ class QuizService:
         current_user_id: int,
         request_url: str,
     ) -> QuizzesListResponse:
+        """
+        Retrieve a list of quizzes for a company with pagination.
+
+        Args:
+            uow (IUnitOfWork): Unit of work for database operations.
+            company_id (int): ID of the company.
+            skip (int): Number of records to skip for pagination.
+            limit (int): Maximum number of records to return.
+            current_user_id (int): ID of the user making the request.
+            request_url (str): URL of the request for generating pagination links.
+
+        Returns:
+            QuizzesListResponse: Paginated list of quizzes.
+
+        Raises:
+            CompanyPermissionError: If the user does not have permission to view the company's quizzes.
+        """
         async with uow:
             await CompanyService.check_company_permission(
                 uow, company_id, current_user_id
@@ -105,6 +142,22 @@ class QuizService:
         update_data: UpdateQuizRequest,
         current_user_id: int,
     ) -> QuizSchemaResponse:
+        """
+        Update an existing quiz.
+
+        Args:
+            uow (IUnitOfWork): Unit of work for database operations.
+            quiz_id (int): ID of the quiz to be updated.
+            update_data (UpdateQuizRequest): Data for updating the quiz.
+            current_user_id (int): ID of the user updating the quiz.
+
+        Returns:
+            QuizSchemaResponse: The updated quiz.
+
+        Raises:
+            CompanyPermissionError: If the user does not have permission to update the quiz.
+            RecordNotFound: If the quiz does not exist.
+        """
         async with uow:
             quiz = await uow.quizzes.find_one(id=quiz_id)
             await CompanyService.check_company_permission(
@@ -115,6 +168,21 @@ class QuizService:
 
     @staticmethod
     async def delete_quiz(uow: IUnitOfWork, quiz_id: int, current_user_id: int) -> None:
+        """
+        Delete a quiz.
+
+        Args:
+            uow (IUnitOfWork): Unit of work for database operations.
+            quiz_id (int): ID of the quiz to be deleted.
+            current_user_id (int): ID of the user deleting the quiz.
+
+        Returns:
+            None
+
+        Raises:
+            CompanyPermissionError: If the user does not have permission to delete the quiz.
+            RecordNotFound: If the quiz does not exist.
+        """
         async with uow:
             quiz = await uow.quizzes.find_one(id=quiz_id)
             await CompanyService.check_company_permission(
