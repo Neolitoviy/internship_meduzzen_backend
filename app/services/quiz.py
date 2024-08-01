@@ -264,6 +264,7 @@ class QuizService:
     ):
         """
         Updates an existing quiz with new data, including questions and answers.
+        If there are questions in the existing quiz that are not in the new data, they are removed.
 
         Args:
             uow (IUnitOfWork): The unit of work instance for database operations.
@@ -278,10 +279,16 @@ class QuizService:
         )
         await QuizService.update_quiz(uow, quiz.id, update_quiz_data, current_user_id)
 
+        existing_questions = await uow.questions.find_all(quiz_id=quiz.id)
+        existing_question_dict = {q.question_text: q for q in existing_questions}
+        new_question_texts = {q.question_text for q in quiz_data.questions_data}
+
+        questions_to_remove = set(existing_question_dict.keys()) - new_question_texts
+        for question_text in questions_to_remove:
+            await QuestionService.delete_question(uow, existing_question_dict[question_text].id, current_user_id)
+
         for question_data in quiz_data.questions_data:
-            question = await uow.questions.find_one(
-                question_text=question_data.question_text, quiz_id=quiz.id
-            )
+            question = existing_question_dict.get(question_data.question_text)
             if not question:
                 await QuestionService.create_question(
                     uow, quiz.id, question_data, current_user_id
@@ -293,11 +300,17 @@ class QuizService:
                 await QuestionService.update_question(
                     uow, question.id, update_question_data, current_user_id
                 )
+
+                existing_answers = await uow.answers.find_all(question_id=question.id)
+                existing_answer_dict = {a.answer_text: a for a in existing_answers}
+                new_answer_texts = {a.answer_text for a in question_data.answers}
+
+                answers_to_remove = set(existing_answer_dict.keys()) - new_answer_texts
+                for answer_text in answers_to_remove:
+                    await AnswerService.delete_answer(uow, existing_answer_dict[answer_text].id, current_user_id)
+
                 for answer_data in question_data.answers:
-                    answer = await uow.answers.find_one(
-                        answer_text=answer_data.answer_text,
-                        question_id=question.id,
-                    )
+                    answer = existing_answer_dict.get(answer_data.answer_text)
                     if not answer:
                         await AnswerService.create_answer(
                             uow, question.id, answer_data, current_user_id
