@@ -1,24 +1,33 @@
-from pydantic import BaseModel, conlist
+from pydantic import BaseModel, conlist, Field
 
 from app.schemas.answer import AnswerSchemaCreate
 
 
 class QuestionSchemaCreate(BaseModel):
-    question_text: str
-    answers: conlist(AnswerSchemaCreate, min_length=2)
+    """
+    Schema for creating a new question.
+    """
+    question_text: str = Field(..., description="The text of the question.")
+    answers: conlist(AnswerSchemaCreate, min_length=2) = Field(..., description="A list of answers for the question, a minimum of 2 answers.")
 
     model_config = {"from_attributes": True}
 
 
 class QuestionSchemaResponse(BaseModel):
-    id: int
-    quiz_id: int
-    question_text: str
+    """
+    Schema for the response when retrieving a question.
+    """
+    id: int = Field(..., description="The unique identifier of the question.")
+    quiz_id: int = Field(..., description="The unique identifier of the quiz to which the question belongs.")
+    question_text: str = Field(..., description="The text of the question.")
 
     model_config = {"from_attributes": True}
 
 
 class UpdateQuestionRequest(BaseModel):
-    question_text: str
+    """
+    Schema for updating an existing question.
+    """
+    question_text: str = Field(..., description="The updated text of the question.")
 
     model_config = {"from_attributes": True}

@@ -39,6 +39,18 @@ async def create_company(
     current_user: CurrentUserDep,
     company_service: CompanyServiceDep,
 ):
+    """
+    Create a new company.
+
+    Args:
+        company (CompanyCreate): The data to create a new company.
+        uow (UOWDep): The unit of work dependency.
+        current_user (CurrentUserDep): The current authenticated user.
+        company_service (CompanyServiceDep): The company service dependency.
+
+    Returns:
+        CompanyResponse: The created company.
+    """
     return await company_service.create_company(uow, company, current_user.id)
 
 
@@ -51,6 +63,20 @@ async def get_companies(
     skip: int = 0,
     limit: int = 10,
 ):
+    """
+    Retrieve a list of companies with pagination.
+
+    Args:
+        request (Request): The request object.
+        uow (UOWDep): The unit of work dependency.
+        current_user (CurrentUserDep): The current authenticated user.
+        company_service (CompanyServiceDep): The company service dependency.
+        skip (int): Number of records to skip for pagination. Default is 0.
+        limit (int): Maximum number of records to return. Default is 10.
+
+    Returns:
+        CompanyListResponse: A paginated list of companies.
+    """
     return await company_service.get_companies(
         uow, skip, limit, str(request.url), current_user.id
     )
@@ -65,6 +91,18 @@ async def get_company(
     current_user: CurrentUserDep,
     company_service: CompanyServiceDep,
 ):
+    """
+    Retrieve a company by ID.
+
+    Args:
+        company_id (int): The ID of the company to retrieve.
+        uow (UOWDep): The unit of work dependency.
+        current_user (CurrentUserDep): The current authenticated user.
+        company_service (CompanyServiceDep): The company service dependency.
+
+    Returns:
+        CompanyResponse: The retrieved company.
+    """
     return await company_service.get_company_by_id(uow, company_id, current_user.id)
 
 
@@ -78,6 +116,19 @@ async def update_company(
     current_user: CurrentUserDep,
     company_service: CompanyServiceDep,
 ):
+    """
+    Update a company.
+
+    Args:
+        company_id (int): The ID of the company to update.
+        company (CompanyUpdate): The data to update the company with.
+        uow (UOWDep): The unit of work dependency.
+        current_user (CurrentUserDep): The current authenticated user.
+        company_service (CompanyServiceDep): The company service dependency.
+
+    Returns:
+        CompanyResponse: The updated company.
+    """
     return await company_service.update_company(
         uow, company_id, company, current_user.id
     )
@@ -93,6 +144,18 @@ async def delete_company(
     current_user: CurrentUserDep,
     company_service: CompanyServiceDep,
 ):
+    """
+    Delete a company.
+
+    Args:
+        company_id (int): The ID of the company to delete.
+        uow (UOWDep): The unit of work dependency.
+        current_user (CurrentUserDep): The current authenticated user.
+        company_service (CompanyServiceDep): The company service dependency.
+
+    Returns:
+        None
+    """
     return await company_service.delete_company(uow, company_id, current_user.id)
 
 
@@ -107,6 +170,18 @@ async def request_to_join_company(
     current_user: CurrentUserDep,
     service: CompanyRequestServiceDep,
 ):
+    """
+    Request to join a company.
+
+    Args:
+        company_id (int): The ID of the company to join.
+        uow (UOWDep): The unit of work dependency.
+        current_user (CurrentUserDep): The current authenticated user.
+        service (CompanyRequestServiceDep): The company request service dependency.
+
+    Returns:
+        CompanyRequestResponse: The created company request.
+    """
     request = CompanyRequestCreate(company_id=company_id)
     return await service.request_to_join_company(uow, request, current_user.id)
 
@@ -123,6 +198,19 @@ async def invite_user_to_company(
     current_user: CurrentUserDep,
     service: CompanyInvitationServiceDep,
 ):
+    """
+    Invite a user to join a company.
+
+    Args:
+        company_id (int): The ID of the company.
+        user_id (int): The ID of the user to invite.
+        uow (UOWDep): The unit of work dependency.
+        current_user (CurrentUserDep): The current authenticated user.
+        service (CompanyInvitationServiceDep): The company invitation service dependency.
+
+    Returns:
+        CompanyInvitationResponse: The created company invitation.
+    """
     invitation = CompanyInvitationCreate(company_id=company_id, invited_user_id=user_id)
     return await service.send_invitation(uow, invitation, current_user.id)
 
@@ -134,6 +222,18 @@ async def leave_company(
     current_user: CurrentUserDep,
     service: CompanyMemberServiceDep,
 ):
+    """
+    Leave a company.
+
+    Args:
+        company_id (int): The ID of the company to leave.
+        uow (UOWDep): The unit of work dependency.
+        current_user (CurrentUserDep): The current authenticated user.
+        service (CompanyMemberServiceDep): The company member service dependency.
+
+    Returns:
+        dict: A message indicating the user has successfully left the company.
+    """
     await service.leave_company(uow, company_id, current_user.id)
     return {"detail": "Successfully left the company"}
 
@@ -152,6 +252,21 @@ async def get_memberships_by_company_id(
     skip: int = 0,
     limit: int = 10,
 ):
+    """
+    Retrieve a list of company members with pagination.
+
+    Args:
+        request (Request): The request object.
+        uow (UOWDep): The unit of work dependency.
+        current_user (CurrentUserDep): The current authenticated user.
+        service (CompanyMemberServiceDep): The company member service dependency.
+        company_id (int): The ID of the company.
+        skip (int): Number of records to skip for pagination. Default is 0.
+        limit (int): Maximum number of records to return. Default is 10.
+
+    Returns:
+        CompanyMemberListResponse: A paginated list of company members.
+    """
     return await service.get_memberships(
         uow, current_user.id, company_id, skip, limit, str(request.url)
     )
@@ -164,6 +279,18 @@ async def remove_member(
     current_user: CurrentUserDep,
     service: CompanyMemberServiceDep,
 ):
+    """
+    Remove a member from the company.
+
+    Args:
+        member_id (int): The ID of the member to remove.
+        uow (UOWDep): The unit of work dependency.
+        current_user (CurrentUserDep): The current authenticated user.
+        service (CompanyMemberServiceDep): The company member service dependency.
+
+    Returns:
+        None
+    """
     return await service.remove_member(uow, member_id, current_user.id)
 
 
@@ -175,6 +302,19 @@ async def appoint_admin(
     current_user: CurrentUserDep,
     service: CompanyMemberServiceDep,
 ):
+    """
+    Appoint a user as an admin of the company.
+
+    Args:
+        company_id (int): The ID of the company.
+        user_id (int): The ID of the user to appoint as admin.
+        uow (UOWDep): The unit of work dependency.
+        current_user (CurrentUserDep): The current authenticated user.
+        service (CompanyMemberServiceDep): The company member service dependency.
+
+    Returns:
+        dict: A message indicating the user has been appointed as admin.
+    """
     await service.appoint_admin(uow, company_id, user_id, current_user.id)
     return {"detail": "User appointed as admin successfully"}
 
@@ -187,6 +327,19 @@ async def remove_admin(
     current_user: CurrentUserDep,
     service: CompanyMemberServiceDep,
 ):
+    """
+    Remove a user from the admin role of the company.
+
+    Args:
+        company_id (int): The ID of the company.
+        user_id (int): The ID of the user to remove as admin.
+        uow (UOWDep): The unit of work dependency.
+        current_user (CurrentUserDep): The current authenticated user.
+        service (CompanyMemberServiceDep): The company member service dependency.
+
+    Returns:
+        dict: A message indicating the user has been removed as admin.
+    """
     await service.remove_admin(uow, company_id, user_id, current_user.id)
     return {"detail": "User removed as admin successfully"}
 
@@ -205,6 +358,21 @@ async def get_admins(
     skip: int = 0,
     limit: int = 10,
 ):
+    """
+    Retrieve a list of company admins with pagination.
+
+    Args:
+        request (Request): The request object.
+        uow (UOWDep): The unit of work dependency.
+        current_user (CurrentUserDep): The current authenticated user.
+        service (CompanyMemberServiceDep): The company member service dependency.
+        company_id (int): The ID of the company.
+        skip (int): Number of records to skip for pagination. Default is 0.
+        limit (int): Maximum number of records to return. Default is 10.
+
+    Returns:
+        CompanyMemberListResponse: A paginated list of company admins.
+    """
     return await service.get_memberships(
         uow,
         current_user.id,

@@ -7,10 +7,28 @@ from app.utils.unitofwork import IUnitOfWork
 
 
 class CompanyMemberService:
+    """
+    Service class to manage company members.
+
+    Provides methods to add, remove, and manage company members, including
+    handling administrative roles.
+    """
+
     @staticmethod
     async def remove_member(
         uow: IUnitOfWork, member_id: int, current_user_id: int
     ) -> None:
+        """
+        Remove a member from a company.
+
+        Args:
+            uow (IUnitOfWork): Unit of work to handle database transactions.
+            member_id (int): ID of the member to be removed.
+            current_user_id (int): ID of the current user requesting the removal.
+
+        Raises:
+            CompanyPermissionError: If the current user is not the owner of the company.
+        """
         async with uow:
             member = await uow.company_members.find_one(id=member_id)
             await CompanyService.check_company_owner(
@@ -22,6 +40,14 @@ class CompanyMemberService:
     async def leave_company(
         uow: IUnitOfWork, company_id: int, current_user_id: int
     ) -> None:
+        """
+        Allow a user to leave a company.
+
+        Args:
+            uow (IUnitOfWork): Unit of work to handle database transactions.
+            company_id (int): ID of the company to leave.
+            current_user_id (int): ID of the current user leaving the company.
+        """
         async with uow:
             member = await uow.company_members.find_one(
                 user_id=current_user_id, company_id=company_id
@@ -38,6 +64,24 @@ class CompanyMemberService:
         request_url: str,
         is_admin: Optional[bool] = None,
     ) -> CompanyMemberListResponse:
+        """
+        Get a list of company members with pagination.
+
+        Args:
+            uow (IUnitOfWork): Unit of work to handle database transactions.
+            user_id (int): ID of the current user requesting the list.
+            company_id (int): ID of the company.
+            skip (int): Number of items to skip.
+            limit (int): Maximum number of items to return.
+            request_url (str): URL of the current request for pagination links.
+            is_admin (Optional[bool]): Filter by admin status if provided.
+
+        Returns:
+            CompanyMemberListResponse: Paginated response with list of company members.
+
+        Raises:
+            CompanyPermissionError: If the current user does not have permission to view the members.
+        """
         async with uow:
             await CompanyService.check_company_permission(uow, company_id, user_id)
 
@@ -81,6 +125,18 @@ class CompanyMemberService:
     async def appoint_admin(
         uow: IUnitOfWork, company_id: int, user_id: int, current_user_id: int
     ) -> None:
+        """
+        Appoint a member as an admin.
+
+        Args:
+            uow (IUnitOfWork): Unit of work to handle database transactions.
+            company_id (int): ID of the company.
+            user_id (int): ID of the user to be appointed as admin.
+            current_user_id (int): ID of the current user requesting the appointment.
+
+        Raises:
+            CompanyPermissionError: If the current user is not the owner of the company.
+        """
         async with uow:
             await CompanyService.check_company_owner(uow, company_id, current_user_id)
             member = await uow.company_members.find_one(
@@ -92,6 +148,18 @@ class CompanyMemberService:
     async def remove_admin(
         uow: IUnitOfWork, company_id: int, user_id: int, current_user_id: int
     ) -> None:
+        """
+        Remove a member from the admin role.
+
+        Args:
+            uow (IUnitOfWork): Unit of work to handle database transactions.
+            company_id (int): ID of the company.
+            user_id (int): ID of the user to be removed from the admin role.
+            current_user_id (int): ID of the current user requesting the removal.
+
+        Raises:
+            CompanyPermissionError: If the current user is not the owner of the company.
+        """
         async with uow:
             await CompanyService.check_company_owner(uow, company_id, current_user_id)
             member = await uow.company_members.find_one(

@@ -26,6 +26,19 @@ class QuizResultService:
         vote_data: QuizVoteRequest,
         user_id: int,
     ) -> QuizResultResponse:
+        """
+        Record a user's vote for a quiz.
+
+        Args:
+            uow (IUnitOfWork): Unit of work instance for database operations.
+            company_id (int): ID of the company.
+            quiz_id (int): ID of the quiz.
+            vote_data (QuizVoteRequest): Data of the user's votes.
+            user_id (int): ID of the user.
+
+        Returns:
+            QuizResultResponse: The recorded quiz result.
+        """
         async with uow:
             await CompanyService.check_company_permission(uow, company_id, user_id)
             total_questions = 0
@@ -64,10 +77,22 @@ class QuizResultService:
             )
             return QuizResultResponse.model_validate(quiz_result)
 
-    @staticmethod  # Already done BE 15 1 1 in previous tasks
+    @staticmethod
     async def get_user_average_score(
         uow: IUnitOfWork, user_id: int, company_id: int, current_user_id: int
     ) -> float:
+        """
+        Get the average quiz score of a user.
+
+        Args:
+            uow (IUnitOfWork): Unit of work instance for database operations.
+            user_id (int): ID of the user.
+            company_id (int): ID of the company.
+            current_user_id (int): ID of the current user making the request.
+
+        Returns:
+            float: The user's average score.
+        """
         async with uow:
             await CompanyService.check_company_permission(
                 uow, company_id, current_user_id
@@ -78,6 +103,18 @@ class QuizResultService:
     async def get_company_average_score(
         uow: IUnitOfWork, user_id: int, company_id: int, current_user_id: int
     ) -> float:
+        """
+        Get the average quiz score for a company.
+
+        Args:
+            uow (IUnitOfWork): Unit of work instance for database operations.
+            user_id (int): ID of the user.
+            company_id (int): ID of the company.
+            current_user_id (int): ID of the current user making the request.
+
+        Returns:
+            float: The company's average score.
+        """
         async with uow:
             await CompanyService.check_company_permission(
                 uow, company_id, current_user_id
@@ -86,10 +123,22 @@ class QuizResultService:
                 user_id=user_id, company_id=company_id
             )
 
-    @staticmethod  # BE 15 1 2
+    @staticmethod
     async def get_user_quiz_scores(
         uow: IUnitOfWork, user_id: int, skip: int, limit: int
     ) -> List[QuizScore]:
+        """
+        Get the quiz scores for a user.
+
+        Args:
+            uow (IUnitOfWork): Unit of work instance for database operations.
+            user_id (int): ID of the user.
+            skip (int): Number of items to skip for pagination.
+            limit (int): Maximum number of items to return.
+
+        Returns:
+            List[QuizScore]: List of quiz scores for the user.
+        """
         async with uow:
             results = await uow.quiz_results.find_all(
                 user_id=user_id, skip=skip, limit=limit
@@ -98,25 +147,33 @@ class QuizResultService:
             for result in results:
                 quiz = await uow.quizzes.find_one(id=result.quiz_id)
                 quiz_id = result.quiz_id
-                if quiz_id not in quiz_scores:  # Each means unique quiz_id
+                if quiz_id not in quiz_scores:
                     quiz_scores[quiz_id] = {
                         "quiz_id": quiz_id,
                         "quiz_title": quiz.title,
                         "scores": [],
                         "timestamps": [],
                     }
-                quiz_scores[quiz_id]["scores"].append(
-                    result.score
-                )  # List of average score for Each quiz
-                quiz_scores[quiz_id]["timestamps"].append(
-                    result.created_at
-                )  # Time ranges
+                quiz_scores[quiz_id]["scores"].append(result.score)
+                quiz_scores[quiz_id]["timestamps"].append(result.created_at)
             return [QuizScore.model_validate(data) for data in quiz_scores.values()]
 
-    @staticmethod  # BE 15 1 3
+    @staticmethod
     async def get_user_last_quiz_attempts(
         uow: IUnitOfWork, user_id: int, skip: int, limit: int
     ) -> List[LastQuizAttempt]:
+        """
+        Get the last quiz attempts for a user.
+
+        Args:
+            uow (IUnitOfWork): Unit of work instance for database operations.
+            user_id (int): ID of the user.
+            skip (int): Number of items to skip for pagination.
+            limit (int): Maximum number of items to return.
+
+        Returns:
+            List[LastQuizAttempt]: List of last quiz attempts for the user.
+        """
         async with uow:
             results = await uow.quiz_results.find_all(
                 user_id=user_id, skip=skip, limit=limit
@@ -136,7 +193,7 @@ class QuizResultService:
                 LastQuizAttempt.model_validate(data) for data in last_attempts.values()
             ]
 
-    @staticmethod  # BE 15 2 1
+    @staticmethod
     async def get_company_members_average_scores_over_time(
         uow: IUnitOfWork,
         company_id: int,
@@ -146,6 +203,21 @@ class QuizResultService:
         skip: int,
         limit: int,
     ) -> List[CompanyMemberAverageScore]:
+        """
+        Get the average scores of company members over time.
+
+        Args:
+            uow (IUnitOfWork): Unit of work instance for database operations.
+            company_id (int): ID of the company.
+            start_date (datetime): Start date of the period.
+            end_date (datetime): End date of the period.
+            current_user_id (int): ID of the current user making the request.
+            skip (int): Number of items to skip for pagination.
+            limit (int): Maximum number of items to return.
+
+        Returns:
+            List[CompanyMemberAverageScore]: List of average scores of company members over time.
+        """
         async with uow:
             await CompanyService.check_company_permission(
                 uow, company_id, current_user_id, is_admin=True
@@ -166,7 +238,7 @@ class QuizResultService:
                 for score in member_scores
             ]
 
-    @staticmethod  # BE 15 2 2
+    @staticmethod
     async def get_user_quiz_trends(
         uow: IUnitOfWork,
         company_id: int,
@@ -177,6 +249,22 @@ class QuizResultService:
         skip: int,
         limit: int,
     ) -> List[QuizTrend]:
+        """
+        Get the quiz trends for a user over a specific date range.
+
+        Args:
+            uow (IUnitOfWork): Unit of work instance for database operations.
+            company_id (int): ID of the company.
+            user_id (int): ID of the user.
+            start_date (datetime): Start date of the period.
+            end_date (datetime): End date of the period.
+            current_user_id (int): ID of the current user making the request.
+            skip (int): Number of items to skip for pagination.
+            limit (int): Maximum number of items to return.
+
+        Returns:
+            List[QuizTrend]: List of quiz trends for the user.
+        """
         async with uow:
             await CompanyService.check_company_permission(
                 uow, company_id, current_user_id, is_admin=True
@@ -202,7 +290,7 @@ class QuizResultService:
                 QuizTrend.model_validate(data) for data in quiz_trends_with_averages
             ]
 
-    @staticmethod  # BE 15 2 3
+    @staticmethod
     async def get_company_user_last_attempts(
         uow: IUnitOfWork,
         company_id: int,
@@ -210,6 +298,19 @@ class QuizResultService:
         skip: int,
         limit: int,
     ) -> List[CompanyUserLastAttempt]:
+        """
+        Get the last quiz attempts for all users in a company.
+
+        Args:
+            uow (IUnitOfWork): Unit of work instance for database operations.
+            company_id (int): ID of the company.
+            requesting_user_id (int): ID of the user making the request.
+            skip (int): Number of items to skip for pagination.
+            limit (int): Maximum number of items to return.
+
+        Returns:
+            List[CompanyUserLastAttempt]: List of last quiz attempts for all users in the company.
+        """
         async with uow:
             await CompanyService.check_company_permission(
                 uow, company_id, requesting_user_id, is_admin=True
@@ -238,6 +339,12 @@ class QuizResultService:
 
     @staticmethod
     async def save_quiz_vote_to_redis(vote: UserQuizVote) -> None:
+        """
+        Save a user's quiz vote to Redis.
+
+        Args:
+            vote (UserQuizVote): The user's quiz vote.
+        """
         connection = await get_redis_client()
         answer_key = f"quiz_vote:{vote.user_id}:{vote.company_id}:{vote.quiz_id}:{vote.question_id}"
 
@@ -251,6 +358,19 @@ class QuizResultService:
         company_id: int,
         quiz_id: int,
     ) -> List[UserQuizVote]:
+        """
+        Get quiz votes from Redis for a specific user and quiz.
+
+        Args:
+            uow (IUnitOfWork): Unit of work instance for database operations.
+            current_user_id (int): ID of the current user making the request.
+            user_id (int): ID of the user whose votes are to be retrieved.
+            company_id (int): ID of the company.
+            quiz_id (int): ID of the quiz.
+
+        Returns:
+            List[UserQuizVote]: List of quiz votes.
+        """
         async with uow:
             await CompanyService.check_company_permission(
                 uow, company_id, current_user_id, is_admin=True
@@ -279,6 +399,20 @@ class QuizResultService:
         quiz_id: int,
         question_id: int,
     ):
+        """
+        Get a specific quiz vote from Redis.
+
+        Args:
+            uow (IUnitOfWork): Unit of work instance for database operations.
+            current_user_id (int): ID of the current user making the request.
+            user_id (int): ID of the user whose vote is to be retrieved.
+            company_id (int): ID of the company.
+            quiz_id (int): ID of the quiz.
+            question_id (int): ID of the question.
+
+        Returns:
+            dict: The quiz vote data.
+        """
         async with uow:
             await CompanyService.check_company_permission(
                 uow, company_id, current_user_id, is_admin=True
@@ -298,6 +432,19 @@ class QuizResultService:
         company_id: int,
         quiz_id: int,
     ) -> str:
+        """
+        Export quiz results from Redis to a CSV format.
+
+        Args:
+            uow (IUnitOfWork): Unit of work instance for database operations.
+            current_user_id (int): ID of the current user making the request.
+            user_id (int): ID of the user whose results are to be exported.
+            company_id (int): ID of the company.
+            quiz_id (int): ID of the quiz.
+
+        Returns:
+            str: CSV data of quiz results.
+        """
         quiz_votes = await QuizResultService.get_quiz_votes_from_redis(
             uow, current_user_id, user_id, company_id, quiz_id
         )
@@ -329,6 +476,19 @@ class QuizResultService:
         company_id: int,
         quiz_id: int,
     ) -> str:
+        """
+        Export quiz results from Redis to a JSON format.
+
+        Args:
+            uow (IUnitOfWork): Unit of work instance for database operations.
+            current_user_id (int): ID of the current user making the request.
+            user_id (int): ID of the user whose results are to be exported.
+            company_id (int): ID of the company.
+            quiz_id (int): ID of the quiz.
+
+        Returns:
+            str: JSON data of quiz results.
+        """
         quiz_votes = await QuizResultService.get_quiz_votes_from_redis(
             uow, current_user_id, user_id, company_id, quiz_id
         )
