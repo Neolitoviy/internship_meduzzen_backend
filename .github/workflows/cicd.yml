@@ -13,16 +13,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Set up Docker
+        uses: docker/setup-docker@v2
+        with:
+          version: '20.10.7'
+          features: |
+            buildx
+            compose
 
       - name: Build and Run Docker Compose
         run: |
-          if docker-compose exec web poetry run pytest --maxfail=1 --disable-warnings -q; then
-            echo "Tests passed."
-          else
-            echo "Tests failed."
-          fi
+          docker-compose up -d --build
 
       - name: Run tests inside Docker container
         run: docker-compose exec web poetry run pytest --maxfail=1 --disable-warnings -q
