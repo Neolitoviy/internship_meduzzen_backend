@@ -26,7 +26,7 @@ jobs:
           docker-compose up -d --build
 
       - name: Run tests inside Docker container
-        run: docker-compose exec web poetry run pytest --maxfail=1 --disable-warnings -q
+        run: docker-compose exec -T web poetry run pytest --maxfail=1 --disable-warnings -q
 
   deploy:
     runs-on: ubuntu-latest
