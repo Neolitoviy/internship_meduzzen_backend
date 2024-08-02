@@ -8,19 +8,46 @@ from app.utils.repository import SQLAlchemyRepository
 
 
 class QuizResultRepository(SQLAlchemyRepository):
+    """
+    Repository class for handling quiz result-related operations.
+
+    Inherits from:
+        SQLAlchemyRepository: Base class for SQLAlchemy operations.
+
+    Attributes:
+        model: The SQLAlchemy model class associated with this repository.
+    """
     model = QuizResult
 
     async def get_average_score(self, **filter_by) -> float:
+        """
+        Calculate the average score of quiz results based on provided filters.
+
+        Args:
+            **filter_by: Arbitrary keyword arguments for filtering quiz results.
+
+        Returns:
+            float: The average score of the filtered quiz results, rounded to 2 decimal places.
+        """
         stmt = select(func.avg(self.model.score)).filter_by(**filter_by)
         result = await self.session.execute(stmt)
         average_score = result.scalar() or 0.0
         return round(average_score, 2)
 
     async def find_last_attempt_with_filter(self, **filter_by) -> QuizResult:
+        """
+        Find the most recent quiz result based on provided filters.
+
+        Args:
+            **filter_by: Arbitrary keyword arguments for filtering quiz results.
+
+        Returns:
+            QuizResult: The most recent quiz result that matches the filters.
+        """
         stmt = (
             select(QuizResult)
             .filter_by(**filter_by)
-            .order_by(desc(QuizResult.created_at))
+            .order_by(desc(self.model.created_at))
             .limit(1)
         )
         results = await self.session.execute(stmt)
@@ -34,6 +61,19 @@ class QuizResultRepository(SQLAlchemyRepository):
         skip: int,
         limit: int,
     ):
+        """
+        Calculate the average scores of company members within a date range.
+
+        Args:
+            company_id (int): The ID of the company.
+            start_date (datetime): The start date of the range.
+            end_date (datetime): The end date of the range.
+            skip (int): The number of records to skip.
+            limit (int): The maximum number of records to return.
+
+        Returns:
+            List[Tuple]: A list of tuples containing user ID, average score, start date, and end date.
+        """
         stmt = (
             select(
                 QuizResult.user_id,
@@ -41,7 +81,7 @@ class QuizResultRepository(SQLAlchemyRepository):
                 func.min(QuizResult.created_at).label("start_date"),
                 func.max(QuizResult.created_at).label("end_date"),
             )
-            .join(CompanyMember, QuizResult.user_id == CompanyMember.user_id)
+            .join(CompanyMember, self.model.user_id == CompanyMember.user_id)
             .where(CompanyMember.company_id == company_id)
             .where(QuizResult.created_at >= start_date)
             .where(QuizResult.created_at <= end_date)
@@ -60,6 +100,19 @@ class QuizResultRepository(SQLAlchemyRepository):
         skip: int,
         limit: int,
     ):
+        """
+        Calculate the trends of quiz scores for a user within a date range.
+
+        Args:
+            user_id (int): The ID of the user.
+            start_date (datetime): The start date of the range.
+            end_date (datetime): The end date of the range.
+            skip (int): The number of records to skip.
+            limit (int): The maximum number of records to return.
+
+        Returns:
+            List[Tuple]: A list of tuples containing quiz ID, average score, start date, end date, and count.
+        """
         stmt = (
             select(
                 self.model.quiz_id,

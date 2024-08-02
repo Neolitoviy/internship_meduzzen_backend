@@ -32,8 +32,24 @@ logger = logging.getLogger(__name__)
 
 
 class UserService:
+    """
+    Service for managing user operations.
+    """
     @staticmethod
     async def create_user(uow: IUnitOfWork, user: UserCreate) -> UserResponse:
+        """
+        Create a new user.
+
+        Args:
+            uow (IUnitOfWork): The unit of work for database operations.
+            user (UserCreate): The user data for creating a new user.
+
+        Raises:
+            EmailAlreadyExists: If a user with the same email already exists.
+
+        Returns:
+            UserResponse: The created user.
+        """
         user_dict = user.model_dump()
         async with uow:
             if await uow.users.find_one_or_none(email=user_dict["email"]):
@@ -47,6 +63,18 @@ class UserService:
     async def get_users(
         uow: IUnitOfWork, skip: int, limit: int, request_url: str
     ) -> UserListResponse:
+        """
+        Retrieve a list of users with pagination.
+
+        Args:
+            uow (IUnitOfWork): The unit of work for database operations.
+            skip (int): The number of records to skip.
+            limit (int): The number of records to retrieve.
+            request_url (str): The request URL for pagination.
+
+        Returns:
+            UserListResponse: A paginated list of users.
+        """
         async with uow:
             total_users = await uow.users.count_all()
             users = await uow.users.find_all(skip=skip, limit=limit)
@@ -69,12 +97,32 @@ class UserService:
 
     @staticmethod
     async def get_user_by_id(uow: IUnitOfWork, user_id: int) -> UserResponse:
+        """
+        Retrieve a user by their ID.
+
+        Args:
+            uow (IUnitOfWork): The unit of work for database operations.
+            user_id (int): The ID of the user to retrieve.
+
+        Returns:
+            UserResponse: The user data.
+        """
         async with uow:
             user = await uow.users.find_one(id=user_id)
             return UserResponse.model_validate(user)
 
     @staticmethod
     async def get_user_by_email(uow: IUnitOfWork, email: str) -> UserInDB:
+        """
+        Retrieve a user by their email.
+
+        Args:
+            uow (IUnitOfWork): The unit of work for database operations.
+            email (str): The email of the user to retrieve.
+
+        Returns:
+            UserInDB: The user data.
+        """
         async with uow:
             user = await uow.users.find_one(email=email)
             return UserInDB.model_validate(user)
@@ -85,6 +133,17 @@ class UserService:
         user: UserUpdate,
         current_user_id: int,
     ) -> UserResponse:
+        """
+        Update a user's information.
+
+        Args:
+            uow (IUnitOfWork): The unit of work for database operations.
+            user (UserUpdate): The updated user data.
+            current_user_id (int): The ID of the current user.
+
+        Returns:
+            UserResponse: The updated user data.
+        """
         user_dict = user.model_dump(exclude_unset=True)
         async with uow:
             updated_user = await uow.users.edit_one(current_user_id, user_dict)
@@ -92,6 +151,13 @@ class UserService:
 
     @staticmethod
     async def delete_user(uow: IUnitOfWork, current_user_id: int) -> None:
+        """
+        Deactivate a user account.
+
+        Args:
+            uow (IUnitOfWork): The unit of work for database operations.
+            current_user_id (int): The ID of the current user.
+        """
         async with uow:
             await uow.users.edit_one(current_user_id, {"is_active": False})
 
@@ -99,6 +165,21 @@ class UserService:
     async def authenticate_user(
         uow: IUnitOfWork, email: str, password: str
     ) -> Optional[Token]:
+        """
+        Authenticate a user and generate an access token.
+
+        Args:
+            uow (IUnitOfWork): The unit of work for database operations.
+            email (str): The user's email.
+            password (str): The user's password.
+
+        Raises:
+            UserNotFound: If the user account is deactivated.
+            InvalidCredentials: If the email or password is incorrect.
+
+        Returns:
+            Optional[Token]: The generated access token.
+        """
         async with uow:
             user = await uow.users.find_one(email=email)
             if not user.is_active:
@@ -131,6 +212,19 @@ class UserService:
     async def create_user_from_token(
         uow: IUnitOfWork, token: HTTPAuthorizationCredentials
     ) -> UserInDB:
+        """
+        Create a new user from a token.
+
+        Args:
+            uow (IUnitOfWork): The unit of work for database operations.
+            token (HTTPAuthorizationCredentials): The authorization token.
+
+        Raises:
+            BadRequest: If the token is invalid.
+
+        Returns:
+            UserInDB: The created user.
+        """
         current_email = await UserService.get_email_from_token(token)
         async with uow:
             user = await uow.users.find_one_or_none(email=current_email)
@@ -149,6 +243,15 @@ class UserService:
     async def get_email_from_token(
         token: HTTPAuthorizationCredentials,
     ) -> Optional[str]:
+        """
+        Retrieve the email from a token. check_owner_jwt_type for default or Auth0 Authorization.
+
+        Args:
+            token (HTTPAuthorizationCredentials): The authorization token.
+
+        Returns:
+            Optional[str]: The email from the token.
+        """
         check_owner_jwt_type = check_jwt_type(token)
         if check_owner_jwt_type:
             payload = decode_jwt_token(token.credentials)
@@ -160,5 +263,15 @@ class UserService:
 
     @staticmethod
     async def check_user_permission(user_id: int, current_user_id: int) -> None:
+        """
+        Check if the current user has permission to perform an action with user_id user.
+
+        Args:
+            user_id (int): The ID of the user to check.
+            current_user_id (int): The ID of the current user.
+
+        Raises:
+            PermissionDenied: If the current user does not have permission.
+        """
         if user_id != current_user_id:
             raise PermissionDenied("You don't have permission!")

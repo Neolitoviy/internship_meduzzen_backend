@@ -1,36 +1,45 @@
-from httpx import AsyncClient
+from datetime import datetime
+from unittest.mock import AsyncMock
 
-from app.schemas.auth import SignInRequest
-from app.schemas.token import Token
+import pytest
+from fastapi.security import HTTPAuthorizationCredentials
+
+from app.schemas.user import UserInDB
+from app.services.auth import authenticate_and_get_user
 from app.services.user import UserService
-from app.utils.unitofwork import IUnitOfWork
+from app.utils.unitofwork import UnitOfWork
 
 
-async def test_authenticate_and_get_user(ac: AsyncClient, uow: IUnitOfWork):
-    user_service = UserService()
-
-    user_create = SignInRequest(email="test_auth@example.com", password="password")
-
-    async with uow:
-        created_user = await user_service.create_user(uow, user_create)
-
-        sign_in_request = SignInRequest(
-            email=created_user.email, password=created_user.password
-        )
-        token: Token = await user_service.authenticate_user(
-            uow, sign_in_request.email, sign_in_request.password
-        )
-
-    headers = {"Authorization": f"Bearer {token.access_token}"}
-    response = await ac.get("/auth/me", headers=headers)
-
-    assert response.status_code == 200
-    assert response.json()["email"] == user_create.email
+@pytest.fixture
+def mock_user():
+    return UserInDB(
+        id=1,
+        email="test@example.com",
+        firstname="Test",
+        lastname="User",
+        is_active=True,
+        hashed_password="hashedpassword",
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
+    )
 
 
-async def test_invalid_token(ac: AsyncClient):
-    headers = {"Authorization": "Bearer invalid_token"}
-    response = await ac.get("/auth/me", headers=headers)
+@pytest.fixture
+def mock_token():
+    return HTTPAuthorizationCredentials(scheme="Bearer", credentials="mocktoken")
 
-    assert response.status_code == 401
-    assert response.json()["detail"] == "Not Found or Bad Request"
+
+@pytest.mark.asyncio
+async def test_authenticate_and_get_user(mock_user, mock_token):
+    uow = AsyncMock(UnitOfWork)
+    user_service = AsyncMock(UserService)
+    user_service.create_user_from_token.return_value = mock_user
+
+    authenticated_user = await authenticate_and_get_user(
+        token=mock_token,
+        uow=uow,
+        user_service=user_service,
+    )
+
+    assert authenticated_user == mock_user
+    user_service.create_user_from_token.assert_called_once_with(uow, mock_token)

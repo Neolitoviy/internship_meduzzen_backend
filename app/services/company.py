@@ -10,10 +10,25 @@ from app.utils.unitofwork import IUnitOfWork
 
 
 class CompanyService:
+    """
+    Service for managing companies and related operations.
+    """
+
     @staticmethod
     async def create_company(
         uow: IUnitOfWork, company: CompanyCreate, user_id: int
     ) -> CompanyResponse:
+        """
+        Create a new company and add the owner as an admin member.
+
+        Args:
+            uow (IUnitOfWork): Unit of work for database operations.
+            company (CompanyCreate): Data for creating a new company.
+            user_id (int): ID of the user creating the company.
+
+        Returns:
+            CompanyResponse: The created company.
+        """
         company_dict = company.model_dump()
         company_dict["owner_id"] = user_id
         async with uow:
@@ -34,6 +49,19 @@ class CompanyService:
         request_url: str,
         current_user_id: int,
     ) -> CompanyListResponse:
+        """
+        Get a list of visible companies for the current user.
+
+        Args:
+            uow (IUnitOfWork): Unit of work for database operations.
+            skip (int): Number of records to skip for pagination.
+            limit (int): Number of records to return for pagination.
+            request_url (str): The URL for pagination links.
+            current_user_id (int): ID of the current user.
+
+        Returns:
+            CompanyListResponse: The list of visible companies with pagination.
+        """
         async with uow:
             total_companies = await uow.companies.count_visible_companies(
                 user_id=current_user_id
@@ -64,6 +92,17 @@ class CompanyService:
     async def get_company_by_id(
         uow: IUnitOfWork, company_id: int, current_user_id: int
     ) -> CompanyResponse:
+        """
+        Get a company by its ID if it is visible to the current user.
+
+        Args:
+            uow (IUnitOfWork): Unit of work for database operations.
+            company_id (int): ID of the company to retrieve.
+            current_user_id (int): ID of the current user.
+
+        Returns:
+            CompanyResponse: The requested company.
+        """
         async with uow:
             company = await uow.companies.find_one(id=company_id)
             if company.owner_id == current_user_id or company.visibility:
@@ -76,6 +115,18 @@ class CompanyService:
         company: CompanyUpdate,
         current_user_id: int,
     ) -> CompanyResponse:
+        """
+        Update an existing company.
+
+        Args:
+            uow (IUnitOfWork): Unit of work for database operations.
+            company_id (int): ID of the company to update.
+            company (CompanyUpdate): Data for updating the company.
+            current_user_id (int): ID of the current user.
+
+        Returns:
+            CompanyResponse: The updated company.
+        """
         await self.check_company_owner(uow, company_id, current_user_id)
         company_dict = company.model_dump(exclude_unset=True)
         async with uow:
@@ -85,6 +136,14 @@ class CompanyService:
     async def delete_company(
         self, uow: IUnitOfWork, company_id: int, current_user_id: int
     ) -> None:
+        """
+        Delete a company.
+
+        Args:
+            uow (IUnitOfWork): Unit of work for database operations.
+            company_id (int): ID of the company to delete.
+            current_user_id (int): ID of the current user.
+        """
         await self.check_company_owner(uow, company_id, current_user_id)
         async with uow:
             await uow.companies.delete_one(company_id)
@@ -93,6 +152,17 @@ class CompanyService:
     async def check_company_owner(
         uow: IUnitOfWork, company_id: int, current_user_id: int
     ) -> None:
+        """
+        Check if the current user is the owner of the company.
+
+        Args:
+            uow (IUnitOfWork): Unit of work for database operations.
+            company_id (int): ID of the company.
+            current_user_id (int): ID of the current user.
+
+        Raises:
+            CompanyPermissionError: If the user is not the owner of the company.
+        """
         async with uow:
             company = await uow.companies.find_one(id=company_id)
             if company.owner_id != current_user_id:
@@ -104,6 +174,18 @@ class CompanyService:
     async def check_company_permission(
         uow: IUnitOfWork, company_id: int, current_user_id: int, is_admin: bool = False
     ) -> None:
+        """
+        Check if the current user has permission to perform an action in the company like admin or member.
+
+        Args:
+            uow (IUnitOfWork): Unit of work for database operations.
+            company_id (int): ID of the company.
+            current_user_id (int): ID of the current user.
+            is_admin (bool): Flag indicating if admin permissions are required, else member.
+
+        Raises:
+            CompanyPermissionError: If the user does not have the required permissions.
+        """
         filters = {"company_id": company_id, "user_id": current_user_id}
         if is_admin:
             filters["is_admin"] = True

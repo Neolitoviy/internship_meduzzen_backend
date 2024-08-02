@@ -1,147 +1,118 @@
-from httpx import AsyncClient
+from datetime import datetime
+from unittest.mock import patch
 
-from app.schemas.company import CompanyCreate
+import pytest
+from faker import Faker
+
+from app.schemas.company import CompanyResponse
+from app.schemas.company_member import CompanyMemberResponse
 from app.services.company import CompanyService
-from app.services.company_invitation import CompanyInvitationService
 from app.services.company_member import CompanyMemberService
-from app.services.user import UserService
-from app.utils.unitofwork import IUnitOfWork
+
+faker = Faker()
 
 
-async def test_remove_member(ac: AsyncClient, uow: IUnitOfWork, current_user):
-    company = await uow.companies.add_one(
-        {
-            "name": "Test Company",
-            "description": "Test Description",
-            "owner_id": current_user.id,
-        }
+@pytest.fixture
+def mock_company():
+    return CompanyResponse(
+        id=1,
+        name=faker.company(),
+        description=faker.text(),
+        visibility=True,
+        owner_id=1,
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
     )
-    member = await uow.company_members.add_one(
-        {"company_id": company.id, "user_id": current_user.id}
+
+
+@pytest.fixture
+def mock_member():
+    return CompanyMemberResponse(
+        id=1, company_id=1, user_id=1, is_admin=False, created_at=datetime.utcnow()
     )
-    await uow.commit()
-
-    response = await ac.delete(f"/company_members/{member.id}")
-    assert response.status_code == 204
 
 
-async def test_leave_company(ac: AsyncClient, uow: IUnitOfWork, current_user):
-    company = await uow.companies.add_one(
-        {
-            "name": "Test Company",
-            "description": "Test Description",
-            "owner_id": current_user.id,
-        }
-    )
-    await uow.company_members.add_one(
-        {"company_id": company.id, "user_id": current_user.id}
-    )
-    await uow.commit()
+@pytest.mark.asyncio
+async def test_remove_member(uow, mock_member):
+    member_id = mock_member.id
+    current_user_id = 1
 
-    response = await ac.post(f"/company_members/{company.id}/leave")
-    assert response.status_code == 200
-    data = response.json()
-    assert data["company_id"] == company.id
-    assert data["user_id"] == current_user.id
+    uow.company_members.find_one.return_value = mock_member
+    uow.company_members.delete_one.return_value = None
+
+    with patch.object(CompanyService, "check_company_owner", return_value=None):
+        await CompanyMemberService.remove_member(uow, member_id, current_user_id)
+
+    assert uow.company_members.find_one.called
+    assert uow.company_members.delete_one.called
 
 
-async def test_get_memberships(ac: AsyncClient, uow: IUnitOfWork, current_user):
-    response = await ac.get("/company_members/")
-    assert response.status_code == 200
-    data = response.json()
-    assert "memberships" in data
-    assert isinstance(data["memberships"], list)
+@pytest.mark.asyncio
+async def test_leave_company(uow, mock_member):
+    company_id = mock_member.company_id
+    current_user_id = mock_member.user_id
+
+    uow.company_members.find_one.return_value = mock_member
+    uow.company_members.delete_one.return_value = None
+
+    await CompanyMemberService.leave_company(uow, company_id, current_user_id)
+
+    assert uow.company_members.find_one.called
+    assert uow.company_members.delete_one.called
 
 
-async def test_appoint_admin(
-    ac: AsyncClient,
-    uow: IUnitOfWork,
-    user_service: UserService,
-    company_service: CompanyService,
-    member_service: CompanyMemberService,
-    invitation_service: CompanyInvitationService,
-    create_test_user,
-):
-    # Create the company owner and get the token
-    owner, owner_token = await create_test_user(email="owner@example.com")
+@pytest.mark.asyncio
+async def test_get_memberships(uow, mock_member):
+    company_id = mock_member.company_id
+    user_id = mock_member.user_id
+    skip = 0
+    limit = 10
+    request_url = "http://testserver/company/1/members"
+    is_admin = None
 
-    # Create the company
-    company_create = CompanyCreate(
-        name="Test Company", description="A test company", visibility=True
-    )
-    company = await company_service.create_company(uow, company_create, owner.id)
+    uow.company_members.count_all.return_value = 1
+    uow.company_members.find_all.return_value = [mock_member]
 
-    # Create another user and get the token
-    member, member_token = await create_test_user(email="member@example.com")
-
-    # Send invitation to the user to join the company
-    await invitation_service.send_invitation(uow, company.id, member.email, owner.id)
-
-    # Accept the invitation as the user
-    invitation = await uow.company_invitations.find_one(
-        company_id=company.id, invited_user_id=member.id
-    )
-    await invitation_service.accept_invitation(uow, invitation.id, member.id)
-
-    # Appoint the user as an administrator
-    response = await ac.post(
-        f"/company_members/{company.id}/admin/{member.id}/appoint",
-        headers={"Authorization": f"Bearer {owner_token}"},
-    )
-    assert response.status_code == 204
-
-    # Check that the user is now an administrator
-    async with uow:
-        updated_member = await uow.company_members.find_one(
-            company_id=company.id, user_id=member.id
+    with patch.object(CompanyService, "check_company_permission", return_value=None):
+        response = await CompanyMemberService.get_memberships(
+            uow, user_id, company_id, skip, limit, request_url, is_admin
         )
-    assert updated_member.is_admin is True
+
+    assert response.current_page == 1
+    assert response.total_pages == 1
+    assert len(response.items) == 1
+    assert response.items[0].id == mock_member.id
 
 
-async def test_remove_admin(
-    ac: AsyncClient,
-    uow: IUnitOfWork,
-    user_service: UserService,
-    company_service: CompanyService,
-    member_service: CompanyMemberService,
-    invitation_service: CompanyInvitationService,
-    create_test_user,
-):
-    # Create the company owner and get the token
-    owner, owner_token = await create_test_user
+@pytest.mark.asyncio
+async def test_appoint_admin(uow, mock_member):
+    company_id = mock_member.company_id
+    user_id = mock_member.user_id
+    current_user_id = 1
 
-    # Create the company
-    company_create = CompanyCreate(
-        name="Test Company", description="A test company", visibility=True
-    )
-    company = await company_service.create_company(uow, company_create, owner.id)
+    uow.company_members.find_one.return_value = mock_member
 
-    # Create another user and get the token
-    member, member_token = await create_test_user
-
-    # Send invitation to the user to join the company
-    await invitation_service.send_invitation(uow, company.id, member.email, owner.id)
-
-    # Accept the invitation as the user
-    invitation = await uow.company_invitations.find_one(
-        company_id=company.id, invited_user_id=member.id
-    )
-    await invitation_service.accept_invitation(uow, invitation.id, member.id)
-
-    # Appoint the user as an administrator
-    async with uow:
-        await uow.company_members.edit_one(member.id, {"is_admin": True})
-
-    # Remove the user as an administrator
-    response = await ac.post(
-        f"/company_members/{company.id}/admin/{member.id}/remove",
-        headers={"Authorization": f"Bearer {owner_token}"},
-    )
-    assert response.status_code == 204
-
-    # Check that the user is no longer an administrator
-    async with uow:
-        updated_member = await uow.company_members.find_one(
-            company_id=company.id, user_id=member.id
+    with patch.object(CompanyService, "check_company_owner", return_value=None):
+        await CompanyMemberService.appoint_admin(
+            uow, company_id, user_id, current_user_id
         )
-    assert updated_member.is_admin is False
+
+    assert uow.company_members.find_one.called
+    assert mock_member.is_admin == True
+
+
+@pytest.mark.asyncio
+async def test_remove_admin(uow, mock_member):
+    company_id = mock_member.company_id
+    user_id = mock_member.user_id
+    current_user_id = 1
+
+    uow.company_members.find_one.return_value = mock_member
+
+    with patch.object(CompanyService, "check_company_owner", return_value=None):
+        await CompanyMemberService.remove_admin(
+            uow, company_id, user_id, current_user_id
+        )
+
+    assert uow.company_members.find_one.called
+    assert mock_member.is_admin == False

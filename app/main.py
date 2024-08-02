@@ -1,4 +1,5 @@
 import logging
+from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI
@@ -21,33 +22,37 @@ from app.routers.user import router as users_router
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI()
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Context manager for application lifespan events.
+
+    Handles setup and teardown tasks such as establishing and closing Redis connections.
+    """
+    # startup
+    client = await get_redis_client()
+    await client.ping()
+    yield
+    # shutdown
+    await client.close()
+
+
+app = FastAPI(lifespan=lifespan)
+
+# Register global exception handlers
 register_exception_handlers(app)
 
 # CORS Middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # All
+    allow_origins=["*"],  # Allow all origins
     allow_credentials=True,
-    allow_methods=["*"],  # All
-    allow_headers=["*"],  # All
+    allow_methods=["*"],  # Allow all methods
+    allow_headers=["*"],  # Allow all headers
 )
 
-
-@app.on_event("startup")
-async def startup_event():
-    client = await get_redis_client()
-    await client.ping()
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    client = await get_redis_client()
-    await client.close()
-
-
-# Routes
+# Include routers
 app.include_router(me_router)
 app.include_router(users_router)
 app.include_router(company_router)
