@@ -1,22 +1,6 @@
 version: '3.8'
 
 services:
-  db:
-    image: postgres:latest
-    environment:
-      - POSTGRES_USER
-      - POSTGRES_PASSWORD=${POSTGRES_PASS}
-      - POSTGRES_DB
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-
-  redis:
-    image: redis:latest
-    ports:
-      - "6379:6379"
-
   web:
     build:
       context: .
@@ -30,12 +14,9 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASS}
       - POSTGRES_DB
       - POSTGRES_PORT
-      - POSTGRES_HOST=db
-      - REDIS_HOST=redis
+      - POSTGRES_HOST
+      - REDIS_HOST
       - REDIS_PORT
-    depends_on:
-      - db
-      - redis
 
   celery:
     build:
@@ -48,12 +29,9 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASS}
       - POSTGRES_DB
       - POSTGRES_PORT
-      - POSTGRES_HOST=db
-      - REDIS_HOST=redis
+      - POSTGRES_HOST
+      - REDIS_HOST
       - REDIS_PORT
-    depends_on:
-      - db
-      - redis
 
   celery-beat:
     build:
@@ -66,12 +44,10 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASS}
       - POSTGRES_DB
       - POSTGRES_PORT
-      - POSTGRES_HOST=db
-      - REDIS_HOST=redis
+      - POSTGRES_HOST
+      - REDIS_HOST
       - REDIS_PORT
     depends_on:
-      - db
-      - redis
       - celery
 
   flower:
@@ -88,13 +64,8 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASS}
       - POSTGRES_DB
       - POSTGRES_PORT
-      - POSTGRES_HOST=db
-      - REDIS_HOST=redis
+      - POSTGRES_HOST
+      - REDIS_HOST
       - REDIS_PORT
     depends_on:
-      - db
-      - redis
       - celery
-
-volumes:
-  postgres_data:
