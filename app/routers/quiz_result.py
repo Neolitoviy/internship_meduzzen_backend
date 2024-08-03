@@ -190,7 +190,8 @@ async def get_company_members_average_scores(
 
 
 @router.get(
-    "/companies/{company_id}/users/{user_id}/quiz-trends", response_model=List[QuizTrend]
+    "/companies/{company_id}/users/{user_id}/quiz-trends",
+    response_model=List[QuizTrend],
 )
 async def get_user_quiz_trends(
     company_id: int,
